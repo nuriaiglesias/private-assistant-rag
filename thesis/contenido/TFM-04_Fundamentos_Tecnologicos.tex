@@ -1,0 +1,54 @@
+\chapter{Fundamentos tecnológicos}\label{chap:fundamentos}
+
+Este capítulo describe las decisiones tecnológicas adoptadas para el prototipo del asistente institucional. Se presentan las herramientas principales de desarrollo, las librerías clave del pipeline RAG y los criterios que han guiado la selección frente a alternativas viables.
+
+\section{Tecnologías de desarrollo}\label{sec:tecnologias-desarrollo}
+
+Esta sección recoge las tecnologías utilizadas como base del desarrollo y de la operación local del sistema. La prioridad ha sido contar con un entorno reproducible, de bajo coste y compatible con un enfoque local-first, sin renunciar a opciones escalables en etapas posteriores.
+
+\subsection{Python}\label{subsec:python}
+
+El lenguaje principal del proyecto es Python. Esta elección se justifica por la madurez de su ecosistema en NLP, su amplia compatibilidad con librerías de embeddings y 	extit{reranking}, y su facilidad para integrar APIs y herramientas externas. Frente a alternativas como Java o Go, Python reduce el tiempo de desarrollo y facilita la experimentación rápida, aspecto clave en un trabajo con componente evaluativo.
+
+Además, el uso de entornos virtuales permite aislar dependencias y mantener un control claro sobre la reproducibilidad del prototipo. Aunque lenguajes como C++ podrían aportar mejoras de rendimiento, el coste de integración y la complejidad no compensan en esta fase, dado que el cuello de botella suele residir en los modelos y no en la lógica de orquestación.
+
+\subsection{Chainlit}\label{subsec:chainlit}
+
+Para la interfaz conversacional se seleccionó Chainlit. Se comparó con Streamlit y Gradio, que son soluciones maduras para prototipos, pero menos especializadas en flujos conversacionales y trazabilidad de mensajes. Chainlit ofrece soporte nativo para 	extit{streaming} de respuestas, manejo de sesiones, y componentes de chat ya alineados con asistentes basados en LLM.
+
+Esta elección reduce la fricción de desarrollo y permite centrar el esfuerzo en la lógica del sistema. Además, su integración con Python resulta directa y permite instrumentar el flujo de entrada, recuperación y salida sin necesidad de personalizar en exceso la capa de UI.
+
+\subsection{Qdrant}\label{subsec:qdrant}
+
+Para el almacenamiento vectorial se eligió Qdrant. Frente a FAISS, que es una librería local sin servidor ni API persistente, Qdrant ofrece un motor vectorial completo con persistencia, filtrado por metadatos y soporte para búsqueda híbrida. En comparación con Chroma, Qdrant proporciona mayor estabilidad operativa y opciones de despliegue más cercanas a un entorno productivo.
+
+También se valoraron soluciones gestionadas como Pinecone o Weaviate. Sin embargo, Qdrant permite operar localmente sin costes adicionales, lo que se ajusta al requisito de privacidad y al enfoque local-first del prototipo. Esta decisión mantiene abierta la posibilidad de migrar a un servicio gestionado si el proyecto evoluciona a un entorno con mayores requisitos de escalabilidad.
+
+\section{Librerías utilizadas}\label{sec:librerias-utilizadas}
+
+En esta sección se detallan las librerías clave que implementan el núcleo del pipeline RAG. Cada elección se ha realizado tras comparar alternativas que podrían aportar ventajas similares en rendimiento o facilidad de uso.
+
+\subsection{Embeddings: BGE-M3}\label{subsec:embeddings}
+
+Para la representación vectorial se ha seleccionado BGE-M3. Esta familia de modelos destaca por su rendimiento en recuperación multilingüe, su capacidad para manejar distintos tipos de consulta y su compatibilidad con entornos locales. Se comparó con alternativas como E5, modelos SBERT clásicos y embeddings gestionados vía API (por ejemplo, OpenAI). 
+
+La elección de BGE-M3 responde a un equilibrio entre calidad y control. Frente a servicios externos, permite operar con privacidad total y sin costes por uso. Frente a modelos más antiguos, ofrece mejores resultados en tareas de recuperación heterogénea y mayor robustez en dominios específicos.
+
+\subsection{LLM: Ollama con Qwen3}\label{subsec:llm}
+
+El modelo generativo base se ejecuta mediante Ollama, con Qwen3 8B como opción principal y Llama 3.2 3B como alternativa ligera. Se comparó con el uso directo de APIs externas (por ejemplo, OpenAI) y con otros runtimes locales.
+
+Ollama aporta simplicidad de despliegue y control total del entorno, lo que facilita la reproducibilidad y la privacidad del prototipo. Qwen3 8B ofrece un rendimiento adecuado para generación en español y tareas de síntesis, mientras que el modelo más pequeño permite pruebas rápidas en equipos con menos recursos. En escenarios donde se requiera mayor calidad, se deja abierta la posibilidad de utilizar un modelo externo como opción complementaria, pero no como dependencia principal.
+
+\subsection{Reranking: BGE Reranker}\label{subsec:reranking}
+
+Para la segunda etapa de recuperación se seleccionó el 	extit{bge-reranker-v2-m3}. Se evaluaron alternativas como 	extit{cross-encoders} genéricos o modelos de 	extit{reranking} más ligeros, pero la familia BGE ofrece una buena relación entre calidad y coste computacional, además de mantener coherencia con los embeddings elegidos.
+
+Esta decisión permite introducir una mejora controlada sobre el 	extit{baseline} de recuperación semántica simple, sin rediseñar el pipeline completo. Además, facilita la comparación experimental, ya que se trata de un cambio focalizado y medible.
+
+\section{Procesamiento documental e ingesta}\label{sec:procesamiento-documental}
+
+Además del núcleo RAG, el prototipo requiere un flujo de ingesta capaz de manejar formatos heterogéneos. Para PDFs se utiliza PyMuPDF, elegido frente a alternativas como pdfplumber por su velocidad y estabilidad en documentos extensos. Para formatos ofimáticos (DOCX, PPTX, HTML), se utiliza Pandoc, que proporciona conversiones robustas a Markdown y simplifica la homogenización del corpus.
+
+Esta combinación reduce la dependencia de herramientas específicas por formato y permite aplicar un esquema de chunking consistente. Se priorizó un flujo reproducible y automatizable, ya que la calidad de la ingesta impacta directamente en la evaluación del componente de recuperación.
+
