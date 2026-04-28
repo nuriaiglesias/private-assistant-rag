@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Env files
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LaTeX build artifacts (thesis)
+thesis/**/*.aux
+thesis/**/*.bbl
+thesis/**/*.bcf
+thesis/**/*.blg
+thesis/**/*.fdb_latexmk
+thesis/**/*.fls
+thesis/**/*.lof
+thesis/**/*.lot
+thesis/**/*.out
+thesis/**/*.run.xml
+thesis/**/*.synctex.gz
+thesis/**/*.toc
+thesis/**/*.xdv

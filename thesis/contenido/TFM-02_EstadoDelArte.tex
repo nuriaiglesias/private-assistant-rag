@@ -1,0 +1,160 @@
+\chapter{Contexto y estado del arte}\label{chap:estadodelarte}
+
+En este capítulo se describe el contexto del trabajo y se revisa el estado del arte de las tecnologías y enfoques más relevantes para la propuesta. 
+Además, se analiza el encaje de la solución planteada dentro de la literatura revisada y se exponen las principales conclusiones obtenidas.
+
+\section{Contexto}
+
+En los últimos años, el desarrollo de la inteligencia artificial generativa ha impulsado la aparición de agentes conversacionales cada vez más capaces de desenvolverse en escenarios reales. 
+Una de las líneas más relevantes en esta evolución ha sido la incorporación de mecanismos de acceso a conocimiento externo, de modo que los modelos pueden consultar documentación, bases de datos y servicios externos para fundamentar mejor sus respuestas. 
+En este contexto, los enfoques basados en \textit{Retrieval-Augmented Generation} (RAG) \parencite{lewis2020rag} han adquirido un papel central, al permitir combinar las capacidades generativas de los modelos con la recuperación de documentación relevante.
+
+Al mismo tiempo, los modelos de lenguaje han dejado de concebirse únicamente como interfaces conversacionales y han pasado a integrarse en sistemas capaces de apoyar flujos de trabajo más amplios. 
+Esta evolución resulta especialmente significativa en entornos institucionales, donde las consultas de los usuarios no siempre finalizan en una simple respuesta informativa, sino que suelen desembocar en una acción posterior, como la redacción de un correo o la realización de un trámite. 
+En este tipo de contextos aparecen además exigencias adicionales, ya que el sistema debe operar sobre documentación interna, respetar restricciones de acceso a la información y ofrecer un mayor grado de control sobre su comportamiento.
+
+\section{Estado del arte}
+
+Los artículos más recientes han explorado con especial interés las arquitecturas de agentes y los mecanismos de orquestación, el uso de herramientas y APIs externas, los sistemas de \textit{Retrieval-Augmented Generation} (RAG) y, más recientemente, los asistentes especializados para dominios institucionales o cerrados. 
+
+Estas líneas resultan especialmente relevantes porque la propuesta no se limita a diseñar un sistema conversacional genérico, sino un asistente institucional con capacidad para consultar documentación interna, utilizar herramientas accionables y transformar una respuesta fundamentada en una actuación útil para el usuario. 
+Además, el trabajo incorpora una contribución experimental específica centrada en la mejora del componente RAG mediante una estrategia de recuperación híbrida y \textit{reranking}. 
+Por ello, este estado del arte no solo revisa los fundamentos técnicos del sistema, sino también sitúa la propuesta en relación con soluciones institucionales existentes y con las principales líneas de mejora del retrieval.
+
+\subsection{Agentes y orquestación}
+
+Una de las líneas más influyentes en este ámbito es la que entiende al agente basado en modelos de lenguaje no como un simple generador de texto, sino como una entidad capaz de razonar, planificar y actuar sobre el entorno. 
+En esta dirección, Yao et al.\ proponen ReAct, un enfoque que combina trazas de razonamiento con acciones explícitas ejecutadas sobre fuentes externas o entornos interactivos \cite{yao2023react}. 
+Para el contexto de este trabajo, ReAct resulta especialmente relevante porque introduce una base conceptual clara para el diseño de un agente orquestador que no solo responde, sino que decide qué hacer, qué consultar y en qué orden ejecutar cada paso.
+
+Sobre esta idea inicial, la investigación posterior ha ampliado el foco desde agentes individuales hacia sistemas compuestos por múltiples agentes especializados, como AgentVerse, un marco de colaboración multiagente en el que distintos agentes cooperan para resolver tareas \cite{chen2024agentverse}.
+Los resultados descritos por los autores muestran que, en determinados escenarios, un conjunto coordinado de agentes puede superar a un único agente generalista. 
+
+Hong et al.\ proponen MetaGPT \parencite{hong2024metagpt} que frente a aproximaciones más informales, MetaGPT introduce una organización más estructurada del trabajo entre agentes, de forma que cada componente participa en una fase concreta del proceso y verifica resultados intermedios. 
+Sugiere que la división explícita de responsabilidades puede reducir inconsistencias y facilitar la incorporación de nuevas capacidades sin rediseñar completamente el sistema.
+
+Por su parte, Wu et al.\ presentan AutoGen \cite{wu2024autogen}, uno de los elementos más destacables es que los agentes pueden operar en distintos modos, combinando modelos de lenguaje, intervención humana y uso de herramientas externas. 
+Esta visión encaja con el enfoque de este proyecto, en el que se persigue una arquitectura en la que un agente orquestador coordine módulos y capacidades desacopladas dentro de un entorno controlado.
+
+Más recientemente, Dang et al.\ plantean un esquema centralizado en el que un orquestador dirige de forma adaptativa a los distintos agentes según el estado de la tarea \cite{dang2025evolving}. 
+Aportan evidencias de que la orquestación debe entenderse como un mecanismo de coordinación capaz de reorganizar prioridades, seleccionar agentes adecuados y ajustar el flujo de ejecución en función del contexto.
+
+\subsection{Uso de herramientas e integración de capacidades}
+
+Una de las limitaciones más relevantes de los modelos de lenguaje es su dificultad para interactuar de forma fiable con recursos externos. 
+Por este motivo, una línea de investigación cada vez más importante se centra en el \textit{tool use}, entendido como la capacidad de un modelo para decidir cuándo utilizar una herramienta y cómo incorporar el resultado obtenido a la respuesta final.
+
+Uno de los trabajos de referencia en esta línea es Toolformer, propuesto por Schick et al.\ \cite{schick2023toolformer}. 
+Su contribución principal es demostrar que el modelo no solo puede ejecutar llamadas a APIs, sino también aprender a decidir en qué momento conviene hacerlo y qué argumentos debe pasar. 
+Esta propuesta aporta una base conceptual sólida para entender la invocación de herramientas como una capacidad integrada dentro del comportamiento del agente.
+
+Una contribución complementaria es ToolLLM, presentada por Qin et al.\ \cite{qin2024toolllm}. 
+En este caso, los autores proponen entrenar y evaluar modelos de lenguaje en escenarios de uso de herramientas sobre un conjunto masivo de APIs reales. 
+Para el contexto de este trabajo, ToolLLM refuerza la idea de que una arquitectura modular debe diseñarse pensando en la extensibilidad, evitando acoplamientos fuertes entre el agente y cada herramienta concreta.
+
+Junto a estas propuestas, también resulta necesario considerar trabajos centrados en su evaluación. 
+En este sentido, API-Bank, de Li et al.\ \cite{li2023apibank}, presentan un \textit{benchmark} en el que se evalúan aspectos como la planificación, la recuperación de la API correcta y la ejecución de llamadas. 
+
+\subsection{RAG}
+
+La técnica de \textit{Retrieval-Augmented Generation} (RAG) surge como una respuesta a una de las limitaciones fundamentales de los modelos de lenguaje: su dependencia exclusiva del conocimiento almacenado en los parámetros del modelo. 
+Aunque este conocimiento permite obtener un buen rendimiento en múltiples tareas, presenta problemas importantes cuando se requiere acceder a información específica o perteneciente a un dominio concreto. 
+
+En este contexto, Lewis et al.\ introducen RAG como un marco que combina un modelo generativo con una memoria externa, accesible mediante un mecanismo de recuperación \cite{lewis2020rag}. 
+Establece una base clara para integrar conocimiento externo durante la generación, mejorando la especificidad, la factualidad y la trazabilidad de las respuestas. 
+Este trabajo es el punto de partida para justificar el uso de un sistema RAG como componente central de consulta.
+
+La investigación posterior ha explorado distintas variantes orientadas a hacer el uso de RAG más flexible y aplicable en sistemas reales. 
+En esta línea, Shi et al.\ proponen REPLUG, donde tratan al modelo de lenguaje como una caja negra y utilizan un recuperador ajustable cuyos documentos se añaden directamente al \textit{prompt} del modelo \cite{shi2024replug}.
+Demostraron que os beneficios de RAG no dependen necesariamente de modificar la arquitectura del modelo, sino que pueden alcanzarse mediante mecanismos externos de recuperación e integración de contexto. 
+
+Asai et al.\ presentan Self-RAG, un enfoque en el que el modelo aprende no solo a recuperar información, sino también a reflexionar sobre la necesidad de dicha recuperación y a criticar la calidad de la respuesta generada \cite{asai2024selfrag}. 
+Esta contribución desplaza de la idea de un RAG estático hacia uno más adaptativo y autorreflexivo. 
+
+Jeong et al.\ proponen Adaptive-RAG, una arquitectura que selecciona dinámicamente la estrategia de recuperación más adecuada en función de la complejidad de la pregunta \cite{jeong2024adaptiverag}. 
+De este modo, la literatura reciente sugiere que la calidad de un sistema RAG depende de la capacidad de decidir cómo y cuándo recuperar evidencia.
+
+Una línea de investigación especialmente importante es la relacionada con la privacidad en sistemas RAG. 
+En este sentido, Zeng et al.\ estudian cómo un sistema RAG puede exponer contenido de la base de recuperación y evidencian que el uso de información privada no solo aporta beneficios en términos de utilidad, sino que también exige nuevas medidas de protección \cite{zeng2024ragprivacy}. 
+Refuerza el considerar la privacidad no como una característica accesoria, sino como una restricción de diseño de primer nivel.
+
+\subsection{Evaluación y mejora concreta del retrieval}
+
+Esta cuestión resulta especialmente relevante, ya que una de sus contribuciones previstas consiste precisamente en proponer y evaluar una mejora concreta sobre el componente de recuperación frente a un \textit{baseline} inicial.
+
+Un punto de partida fundamental en esta línea es el trabajo de Karpukhin et al.\ sobre \textit{Dense Passage Retrieval} (DPR) \cite{karpukhin2020dpr}. 
+DPR plantea aprender representaciones vectoriales en las que cada pregunta quede cerca de los documentos más relevantes, de manera que sea posible recuperarlos de forma eficiente incluso en grandes colecciones de documentos.
+
+A partir de esta base, varios trabajos han abordado la optimización del entrenamiento de recuperadores densos. 
+Entre ellos, RocketQA, propuesto por Qu et al.\ \cite{qu2021rocketqa}, introduce mejoras específicas como la selección de negativos poco informativos o la existencia de falsos negativos en el entrenamiento. 
+Esta aportación demuestra que una mejora del \textit{retrieval} no tiene por qué implicar rediseñar todo el pipeline, sino que puede consistir en una forma específica el entrenamiento o la selección de evidencia recuperada.
+
+Nogueira et al.\ demuestran que un modelo generativo puede emplearse eficazmente para calcular relevancia documental y reordenar documentos previamente recuperados \cite{nogueira2020seq2seqranking}. 
+Esta estrategia resulta atractiva porque permite aumentar la calidad del contexto recuperado sin comprometer excesivamente la arquitectura.
+
+No obstante, mejorar el \textit{retrieval} no es suficiente si no se dispone de criterios adecuados para medir su impacto. 
+En este punto cobra especial relevancia el trabajo de Saad-Falcon et al.\ sobre ARES \cite{saadfalcon2024ares}, el cual propone evaluar separadamente distintas dimensiones del sistema, como la relevancia del contexto recuperado y la relevancia global de la respuesta generada. 
+En lugar de limitar la evaluación a métricas, refuerza la idea de que conviene analizar también la calidad del contexto recuperado.
+
+\subsection{Asistentes institucionales}
+
+Debido al contexto de este trabajo, interesa analizar propuestas que hayan abordado asistentes en contextos institucionales y trabajos que hayan explorado el uso de herramientas en lenguaje natural.
+
+En el ámbito universitario, Trienes et al.\ presentan Marcel, un agente conversacional ligero y de código abierto orientado al soporte de estudiantes \cite{trienes2025marcel}, su alcance permanece centrado en la respuesta a consultas de admisión.
+La solución combina un módulo de \textit{Frequently Asked Questions} con un esquema de \textit{Retrieval-Augmented Generation} para fundamentar las respuestas con información verificable.
+
+Una propuesta más robusta en escenarios cerrados es URASys, de Nguyen et al., que plantea un sistema unificado para responder preguntas estándar y ambiguas en tareas de \textit{academic advising} \cite{nguyen2025urasys}.
+Es especialmente relevante porque muestra que, en contextos institucionales, no basta con recuperar información, sino que también es necesario manejar ambigüedad y reducir alucinaciones. 
+No obstante, no aborda de forma central la integración de herramientas.
+
+Más allá del entorno universitario, encontramos varias propuestas. Liu et al.\ proponen WorkTeam, un marco multiagente para transformar instrucciones en lenguaje natural en flujos de trabajo estructurados en entornos empresariales \cite{liu2025workteam}. 
+Su arquitectura se compone de tres agentes especializados: un supervisor que planifica, un orquestador que organiza componentes, y un agente \textit{filler} que completa parámetros a partir de documentación relevante. 
+Este trabajo transforma una instrucción textual a una acción compuesta sobre herramientas.
+
+En una línea cercana al uso de herramientas, Zhang et al.\ presentan AskToAct \cite{zhang2025asktoact}. 
+La idea central del trabajo consiste en utilizar los propios parámetros de las herramientas como representación explícita de la intención del usuario, generando automáticamente datos de entrenamiento a partir de consultas incompletas.
+Esta aportación refleja que para ejecutar correctamente una herramienta, el sistema debe ser capaz de detectar qué información falta y solicitarla de manera adecuada. 
+
+Por último, Kalra et al.\ presentan HyPA-RAG, un sistema de \textit{Retrieval-Augmented Generation} adaptativo para aplicaciones legales \cite{kalra2025hyparag}. 
+La solución incorpora un clasificador de complejidad de la consulta para ajustar parámetros dinámicamente, una recuperación híbrida que combina métodos basados en grafos de conocimiento, y un marco de evaluación adaptado al dominio. 
+Este trabajo es especialmente relevante para la parte investigadora, ya que demuestra que una mejora explícita del módulo de recuperación puede traducirse en ganancias en exactitud de recuperación, fidelidad y precisión contextual.
+
+\section{Encaje de la propuesta}
+
+La propuesta de este TFM se sitúa en la intersección entre asistentes institucionales especializados, sistemas de uso de herramientas y mejora experimental de \textit{Retrieval-Augmented Generation}. 
+Por una parte, se plantea un asistente institucional especializado orientado a resolver consultas sobre documentación interna. 
+Por otra, incorpora una funcionalidad accionable: la generación y eventual envío supervisado de correos electrónicos como paso operativo posterior a la consulta. 
+Finalmente incorpora una contribución experimental específica sobre el componente RAG basada en recuperación híbrida y \textit{reranking}.
+
+Nuestra propuesta busca cerrar el ciclo entre consulta y acción, transformando una respuesta fundamentada en una actuación útil y trazable.
+
+Comparada con Marcel, nuestra propuesta comparte el interés por un asistente universitario basado en RAG, pero se diferencia en dos aspectos fundamentales. 
+En primer lugar, el caso de uso no se restringe a admisión ni a orientación externa, sino que se orienta a soporte institucional sobre documentación y procedimientos internos. En segundo lugar, el sistema no se limita a responder preguntas, sino que incorpora una transición explícita desde la evidencia documental hacia una acción operativa, en este caso la redacción o envío supervisado de correos formales.
+
+En relación con URASys, la propuesta coincide en la importancia de operar en entornos cerrados, reducir alucinaciones y tratar consultas difíciles. 
+No obstante, mientras URASys concentra su aportación en la robustez del \textit{question answering} frente a ambigüedad y no respondibles, este proyecto amplía el alcance hacia una arquitectura con capacidad de acción.
+
+WorkTeam transforma instrucciones en \textit{workflows} generales de negocio mediante una arquitectura multiagente de orquestación y relleno de parámetros. 
+Esta propuesta, en cambio, parte de un escenario institucional centrado en la consulta documental y utiliza la acción como extensión natural de una respuesta fundamentada por RAG. 
+
+Finalmente, HyPA-RAG constituye el antecedente más cercano en la parte investigadora, ya que también propone mejorar el componente RAG mediante recuperación híbrida y ajuste adaptativo. 
+No obstante, la diferencia principal es el contexto ya que HyPA-RAG se presenta como una solución especializada para consultas legales y de política pública.
+
+Por tanto, la aportación diferencial radica en la combinación de elementos que, en los trabajos revisados, aparecen habitualmente por separado. 
+
+\section{Conclusiones}
+
+La revisión realizada permite extraer varias conclusiones relevantes. 
+En primer lugar, las aportaciones respaldan el diseño de una arquitectura modular con un agente orquestador que coordine herramientas y capacidades especializadas, especialmente cuando se busca extensibilidad, trazabilidad y control en entornos privados.
+
+En segundo lugar, integrar herramientas de forma efectiva exige resolver cuestiones fundamentales: decidir cuándo es necesario recurrir a una capacidad externa, seleccionar la herramienta adecuada, construir correctamente la llamada y utilizar el resultado obtenido de manera coherente dentro del proceso de generación. 
+
+En tercer lugar, los trabajos revisados sobre \textit{Retrieval-Augmented Generation} muestran que no siempre basta con recuperar información relevante, sino que también es necesario hacerlo mediante una arquitectura controlada y alineada con los requisitos de privacidad.
+
+Asimismo, la literatura permite identificar varias estrategias principales para mejorar el componente de recuperación. 
+Destacan los enfoques en varias etapas, donde una recuperación inicial eficiente se complementa con un \textit{reranker} más preciso. 
+La investigación reciente subraya que la evaluación del \textit{retrieval} debe abordarse de forma explícita, considerando no solo cuántos documentos relevantes se recuperan, sino también cómo afecta dicha recuperación a la fidelidad y utilidad de la respuesta final. 
+Por ello, este bloque del estado del arte proporciona una base directa para la parte experimental, justificando la comparación entre un \textit{baseline} de recuperación semántica y una mejora concreta basada en recuperación híbrida y \textit{reranking}.
+
+En conjunto, los trabajos revisados muestran la existencia de asistentes especializados en dominios institucionales o cerrados, el interés creciente por la coordinación de herramientas, y la mejora del propio pipeline RAG como vía activa de investigación aplicada. 
+Sin embargo, estas líneas suelen aparecer separadas y este vacío justifica el interés de una propuesta que combine consulta documental fundamentada, uso de herramientas orientadas a la acción y mejora experimental del componente de recuperación dentro de un mismo asistente institucional.

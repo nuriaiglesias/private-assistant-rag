@@ -1,0 +1,9 @@
+@default_files = ('TFM.tex');
+$show_time = 1;
+
+$xelatex = 'xelatex -synctex=1 -interaction=nonstopmode -file-line-error %O %S';
+$pdf_mode = 5;
+
+$ENV{'TEXMFHOME'} = './formato/fuentes//;' . ($ENV{'TEXMFHOME'} // '');
+$ENV{'TEXFONTS'} = './formato/fuentes//;' . ($ENV{'TEXFONTS'} // '');
+$ENV{'TEXINPUTS'} = './formato/fuentes//;' . ($ENV{'TEXINPUTS'} // '');

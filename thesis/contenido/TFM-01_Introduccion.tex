@@ -1,0 +1,56 @@
+\chapter{Introducción}\label{chap:introduccion}
+
+En este primer capítulo se presenta el sistema de agentes con integración de herramientas orientadas a la realización de acciones útiles para el usuario, así como la propuesta de mejora del componente RAG. 
+Asimismo, se describen la motivación y el contexto del trabajo, el planteamiento general de la solución, los objetivos a grandes rasgos y la estructura del documento.
+
+\section{Motivación}
+
+La motivación principal de este trabajo surge de la necesidad de explorar cómo diseñar un asistente institucional que combine consulta documental y capacidad de realizar acciones. 
+Frente a enfoques centrados exclusivamente en la generación de respuestas, se parte de la idea de que un asistente útil en un entorno institucional debe ser capaz no solo de informar, sino también de ayudar a materializar el siguiente paso de manera controlada y supervisada por el ser humano.
+
+Esta necesidad resulta especialmente visible en el ámbito universitario, donde parte de la información relevante para el estudiante se encuentra dispersa en normativas, páginas web, documentos administrativos o guías internas cuya consulta no siempre es sencilla. 
+Cuestiones relacionadas con trámites, prácticas, horarios o becas pueden generar dudas incluso cuando la información existe, simplemente porque no resulta fácilmente accesible o comprensible. 
+En este contexto, disponer de un asistente capaz de responder de forma clara, fundamentada y contextualizada puede suponer una mejora significativa en la experiencia del usuario, especialmente si se tiene en cuenta que muchas instituciones universitarias todavía no cuentan con herramientas conversacionales suficientemente útiles, especializadas o integradas para este tipo de consultas.
+
+A ello se añade una segunda motivación de carácter investigador. 
+En sistemas basados en \textit{Retrieval-Augmented Generation} (RAG), la calidad de la recuperación documental condiciona directamente la calidad de las respuestas generadas. 
+Por este motivo, resulta de interés analizar si una mejora concreta del componente de recuperación, basada en estrategias de recuperación híbrida y \textit{reranking} \parencite{nogueira2020monot5}, puede traducirse en una mejora observable en las respuestas y en la utilidad general del asistente. 
+De este modo, el trabajo no solo responde a una necesidad práctica de desarrollo, sino también a una pregunta aplicada de investigación sobre el impacto real de optimizar el \textit{retrieval} en asistentes institucionales.
+
+\section{Planteamiento del trabajo}\label{sec:planteamiento_solucion}
+
+Se propone el desarrollo de un asistente conversacional institucional privado que permita consultar documentación interna, ofrecer respuestas fundamentadas y apoyar acciones útiles para el usuario dentro de un entorno controlado.
+
+Esta propuesta no aspira únicamente a construir un sistema conversacional más, sino a desarrollar una solución capaz de combinar acceso a conocimiento documental, razonamiento sobre la información recuperada y apoyo operativo en tareas concretas. 
+De este modo, el asistente no se limitará a responder preguntas en lenguaje natural, sino que buscará resultar útil en contextos institucionales en los que las consultas requieren precisión, trazabilidad y capacidad de actuación supervisada.
+
+Esta propuesta toma forma mediante la incorporación de distintas capacidades complementarias articuladas en varios bloques principales. 
+En primer lugar, se plantea una arquitectura modular basada en un agente orquestador, encargado de coordinar los distintos componentes del sistema y de gestionar de forma desacoplada las capacidades disponibles. 
+Sobre esta base, se incorpora un sistema de \textit{Retrieval-Augmented Generation} (RAG) privado para la consulta de documentación interna. 
+El asistente no se limite a responder preguntas, sino que puede facilitar tareas útiles para el usuario, como la generación o el envío supervisado de correos electrónicos. 
+Por último, el trabajo incluye una vertiente experimental centrada en la mejora del componente de recuperación, mediante la comparación entre un \textit{baseline} inicial y una estrategia mejorada basada en recuperación híbrida y \textit{reranking}.
+
+\section{Estructura del trabajo}\label{sec:estructura}
+
+La memoria se organiza en varios capítulos que permiten abordar de forma progresiva tanto la definición del problema y la planificación del trabajo como su fundamentación teórica, su desarrollo técnico y su validación experimental.
+
+De forma más concreta, la estructura del documento es la siguiente:
+
+\begin{itemize}
+    \item \textbf{Capítulo 1. Introducción.} Presenta el contexto y la motivación del trabajo, el planteamiento general de la solución y la organización de la memoria.
+    
+    \item \textbf{Capítulo 2. Contexto y estado del arte.} Revisa los antecedentes más relevantes sobre agentes basados en modelos de lenguaje, orquestación, uso de herramientas, sistemas RAG, mejora del \textit{retrieval} y asistentes institucionales especializados.
+    
+    \item \textbf{Capítulo 3. Objetivos y metodología.} Define los objetivos generales y específicos del trabajo, así como la metodología seguida para su desarrollo y los criterios de comprobación planteados.
+    
+    \item \textbf{Capítulo 4. Diseño de la propuesta.} Describe la solución planteada, la arquitectura general del asistente institucional y el papel de cada uno de sus componentes principales.
+    
+    \item \textbf{Capítulo 5. Implementación del sistema.} Expone el desarrollo técnico realizado, incluyendo la integración del sistema de recuperación documental, el agente orquestador y la funcionalidad asociada a la generación o envío supervisado de correos.
+    
+    \item \textbf{Capítulo 6. Evaluación y mejora del componente RAG.} Presenta la parte experimental del trabajo, el \textit{baseline} de partida, la propuesta de mejora basada en recuperación híbrida y \textit{reranking}, así como el procedimiento de evaluación seguido.
+    
+    \item \textbf{Capítulo 7. Resultados y discusión.} Recoge los resultados obtenidos y analiza su significado en relación con los objetivos planteados y con las limitaciones del sistema.
+    
+    \item \textbf{Capítulo 8. Conclusiones y trabajo futuro.} Resume las principales aportaciones del trabajo, las conclusiones extraídas y las posibles líneas de continuación.
+\end{itemize}
+    
