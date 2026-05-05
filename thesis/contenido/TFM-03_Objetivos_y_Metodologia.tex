@@ -24,7 +24,7 @@ Para alcanzar el objetivo general, se plantean los siguientes objetivos específ
 
     \item \textbf{Establecer} un \textit{baseline} de recuperación basado en búsqueda semántica simple para disponer de una referencia inicial de funcionamiento.
 
-    \item \textbf{Implementar} una variante mejorada del componente RAG mediante una estrategia de recuperación híbrida y \textit{reranking}.
+    \item \textbf{Implementar} una variante mejorada del componente de recuperación de información mediante una estrategia de recuperación híbrida y \textit{reranking}.
 
     \item \textbf{Definir} un conjunto de casos de prueba representativos del dominio institucional, incluyendo consultas informativas, consultas sobre procedimientos y consultas orientadas a acción.
 
@@ -32,7 +32,7 @@ Para alcanzar el objetivo general, se plantean los siguientes objetivos específ
 
     \item \textbf{Evaluar} a través de métricas en qué medida la mejora introducida en el componente de recuperación repercute en la calidad global del asistente y en su capacidad para ofrecer respuestas útiles y operativamente aprovechables.
 
-    \item \textbf{Analizar} las fortalezas, limitaciones y posibles líneas de mejora de la solución propuesta en el contexto de asistentes institucionales privados basados en RAG y uso de herramientas.
+    \item \textbf{Analizar} las fortalezas, limitaciones y posibles líneas de mejora de la solución propuesta en el contexto de asistentes institucionales privados y uso de herramientas.
 \end{enumerate}
 
 \section{Criterios de comprobación de los objetivos}\label{sec:criterios}
@@ -61,7 +61,7 @@ Con el fin de que los objetivos anteriores puedan verificarse de forma objetiva,
 En el desarrollo de este se adoptará una metodología ágil basada en Scrum, al considerarse un enfoque adecuado para organizar un proyecto tecnológico con una parte aplicada y otra parte evaluativa. 
 Esta elección se justifica por su flexibilidad, su carácter iterativo y su capacidad para adaptarse a cambios en los requisitos, en las decisiones de diseño o en los resultados obtenidos durante la implementación y la evaluación del sistema.
 
-En este caso, el trabajo no consiste únicamente en desarrollar un prototipo funcional, sino también en analizar comparativamente el comportamiento de distintas configuraciones del componente RAG. 
+En este caso, el trabajo no consiste únicamente en desarrollar un prototipo funcional, sino también en analizar comparativamente el comportamiento de distintas configuraciones del componente de recuperación de información. 
 Por ello, Scrum se empleará como marco de organización y seguimiento del desarrollo, permitiendo dividir el trabajo en incrementos manejables, revisar periódicamente el progreso y ajustar decisiones conforme avance el proyecto.
 
 \subsection{Scrum}
@@ -181,10 +181,10 @@ En concreto, se integrará la generación de borradores de correos electrónicos
 Esta fase permitirá que el asistente no solo responda preguntas, sino que también apoye una actuación posterior útil dentro del entorno institucional. 
 Al finalizar este sprint, el prototipo deberá ser capaz de producir una salida operativa básica en los casos orientados a acción.
 
-\subsection{Sprint 5: implementación de la mejora del componente RAG}
+\subsection{Sprint 5: implementación de la mejora del componente de recuperación de información}
 
 El cuarto sprint estará orientado a la principal aportación experimental del TFM. 
-En esta etapa se implementará una variante mejorada del componente RAG basada en recuperación híbrida y \textit{reranking}, manteniendo la posibilidad de compararla con el \textit{baseline} definido anteriormente.
+En esta etapa se implementará una variante mejorada del componente de recuperación de información basada en recuperación híbrida y \textit{reranking}, manteniendo la posibilidad de compararla con el \textit{baseline} definido anteriormente.
 El objetivo será introducir una mejora concreta y controlada sobre el proceso de recuperación documental, sin modificar de forma radical el resto del sistema. 
 
 \subsection{Sprint 6: diseño de la evaluación y comparación experimental}
