@@ -12,11 +12,11 @@ El lenguaje principal del proyecto es Python. Esta elección se justifica por la
 
 Además, el uso de entornos virtuales permite aislar dependencias y mantener un control claro sobre la reproducibilidad del prototipo. Aunque lenguajes como C++ podrían aportar mejoras de rendimiento, el coste de integración y la complejidad no compensan en esta fase, dado que el cuello de botella suele residir en los modelos y no en la lógica de orquestación.
 
-\subsection{Chainlit}\label{subsec:chainlit}
+\subsection{UI: Streamlit como opción preferente}\label{subsec:ui}
 
-Para la interfaz conversacional se seleccionó Chainlit. Se comparó con Streamlit y Gradio, que son soluciones maduras para prototipos, pero menos especializadas en flujos conversacionales y trazabilidad de mensajes. Chainlit ofrece soporte nativo para 	extit{streaming} de respuestas, manejo de sesiones, y componentes de chat ya alineados con asistentes basados en LLM.
+Para la interfaz conversacional se prioriza Streamlit, ya que permite prototipar con rapidez y mantener la capa de UI fuera del foco principal del trabajo. Se consideraron Chainlit y Gradio; sin embargo, la simplicidad de Streamlit y su adopcion previa en proyectos similares lo convierten en una opcion practica para iterar sin friccion.
 
-Esta elección reduce la fricción de desarrollo y permite centrar el esfuerzo en la lógica del sistema. Además, su integración con Python resulta directa y permite instrumentar el flujo de entrada, recuperación y salida sin necesidad de personalizar en exceso la capa de UI.
+La interfaz se mantiene desacoplada del pipeline RAG para permitir sustituciones futuras si fuera necesario, sin afectar a la logica de recuperacion ni al orquestador.
 
 \subsection{Qdrant}\label{subsec:qdrant}
 
@@ -34,17 +34,23 @@ Para la representación vectorial se ha seleccionado BGE-M3. Esta familia de mod
 
 La elección de BGE-M3 responde a un equilibrio entre calidad y control. Frente a servicios externos, permite operar con privacidad total y sin costes por uso. Frente a modelos más antiguos, ofrece mejores resultados en tareas de recuperación heterogénea y mayor robustez en dominios específicos.
 
-\subsection{LLM: Ollama con Qwen3}\label{subsec:llm}
+\subsection{LLM: vLLM con modelo local cuantizado}\label{subsec:llm}
 
-El modelo generativo base se ejecuta mediante Ollama, con Qwen3 8B como opción principal y Llama 3.2 3B como alternativa ligera. Se comparó con el uso directo de APIs externas (por ejemplo, OpenAI) y con otros runtimes locales.
+Para la inferencia del modelo generativo se opta por vLLM con un modelo local pequeno y cuantizado, lo que permite iterar rapido con un pipeline funcional y mantener el control del entorno. Esta eleccion prioriza la velocidad de pruebas y la reproducibilidad, manteniendo el enfoque local-first del prototipo.
 
-Ollama aporta simplicidad de despliegue y control total del entorno, lo que facilita la reproducibilidad y la privacidad del prototipo. Qwen3 8B ofrece un rendimiento adecuado para generación en español y tareas de síntesis, mientras que el modelo más pequeño permite pruebas rápidas en equipos con menos recursos. En escenarios donde se requiera mayor calidad, se deja abierta la posibilidad de utilizar un modelo externo como opción complementaria, pero no como dependencia principal.
+Se mantiene abierta la posibilidad de escalar a modelos mayores mediante APIs externas si el hardware disponible resulta insuficiente o si la evaluacion requiere mayor calidad. No obstante, durante las primeras iteraciones el objetivo es validar el flujo completo con un coste computacional reducido.
 
 \subsection{Reranking: BGE Reranker}\label{subsec:reranking}
 
 Para la segunda etapa de recuperación se seleccionó el 	extit{bge-reranker-v2-m3}. Se evaluaron alternativas como 	extit{cross-encoders} genéricos o modelos de 	extit{reranking} más ligeros, pero la familia BGE ofrece una buena relación entre calidad y coste computacional, además de mantener coherencia con los embeddings elegidos.
 
 Esta decisión permite introducir una mejora controlada sobre el 	extit{baseline} de recuperación semántica simple, sin rediseñar el pipeline completo. Además, facilita la comparación experimental, ya que se trata de un cambio focalizado y medible.
+
+\section{Funcionalidad accionable}\label{sec:funcionalidad-accionable}
+
+\subsection{Correos mockeados}\label{subsec:email-mock}
+
+La funcionalidad de generacion de correos se mantiene mockeada en esta fase inicial. Esta decision permite probar el flujo conversacional y la integracion de herramientas sin depender de servicios externos ni de configuraciones de envio reales. El objetivo es validar el comportamiento y la utilidad del borrador generado antes de implementar la integracion definitiva.
 
 \section{Procesamiento documental e ingesta}\label{sec:procesamiento-documental}
 
