@@ -1,0 +1,50 @@
+[
+  {
+    "question": "What does the travel policy document say about expense reimbursement?",
+    "expected_source": "politica_viajes.md"
+  },
+  {
+    "question": "Which document explains the internal scholarship application process?",
+    "expected_source": "procedimiento_becas.txt"
+  },
+  {
+    "question": "What is the required time frame for submitting activity reports after travel?",
+    "expected_source": "politica_viajes.md"
+  },
+  {
+    "question": "What is the standard application window for internal scholarships?",
+    "expected_source": "procedimiento_becas.txt"
+  },
+  {
+    "question": "Which file describes how to write formal emails?",
+    "expected_source": "guia_correo_formal.txt"
+  },
+  {
+    "question": "What closing line is suggested for a formal email?",
+    "expected_source": "guia_correo_formal.txt"
+  },
+  {
+    "question": "What is required before an official trip can be approved?",
+    "expected_source": "politica_viajes.md"
+  },
+  {
+    "question": "Which document mentions submitting family income proof?",
+    "expected_source": "procedimiento_becas.txt"
+  },
+  {
+    "question": "What is the reimbursement timeline for travel expenses?",
+    "expected_source": "politica_viajes.md"
+  },
+  {
+    "question": "Which document mentions saving the submission receipt?",
+    "expected_source": "procedimiento_becas.txt"
+  },
+  {
+    "question": "What is the suggested structure of a formal email?",
+    "expected_source": "guia_correo_formal.txt"
+  },
+  {
+    "question": "Which document lists rules about invoices for expenses?",
+    "expected_source": "politica_viajes.md"
+  }
+]

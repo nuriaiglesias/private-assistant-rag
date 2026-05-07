@@ -40,3 +40,12 @@ class QdrantVectorStore:
 			for vector, payload in zip(vectors, payloads)
 		]
 		self._client.upsert(collection_name=self._collection, points=points)
+
+	def search(self, vector: List[float], limit: int = 5) -> List[qdrant_models.ScoredPoint]:
+		response = self._client.query_points(
+			collection_name=self._collection,
+			query=vector,
+			limit=limit,
+			with_payload=True,
+		)
+		return response.points

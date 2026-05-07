@@ -1,0 +1,11 @@
+You will answer a question using only the context below.
+If the context is insufficient, say so clearly.
+Always cite sources using the format [1], [2], etc.
+
+Question:
+{question}
+
+Context:
+{context}
+
+Answer in Spanish with citations.
