@@ -4,7 +4,7 @@ from typing import List
 
 import requests
 
-from assistant.llm.base import ChatMessage, LLMClient
+from assistant.llm.base import ChatMessage, LLMClient, LLMResponse
 
 
 class OllamaClient(LLMClient):
@@ -12,7 +12,7 @@ class OllamaClient(LLMClient):
 		self._base_url = base_url.rstrip("/")
 		self._model = model
 
-	def generate(self, messages: List[ChatMessage], temperature: float, max_tokens: int) -> str:
+	def generate(self, messages: List[ChatMessage], temperature: float, max_tokens: int) -> LLMResponse:
 		payload = {
 			"model": self._model,
 			"messages": [message.__dict__ for message in messages],
@@ -30,4 +30,8 @@ class OllamaClient(LLMClient):
 		response.raise_for_status()
 		data = response.json()
 		message = data.get("message", {})
-		return message.get("content", "").strip()
+		return LLMResponse(
+			content=message.get("content", "").strip(),
+			input_tokens=int(data.get("prompt_eval_count", 0)),
+			output_tokens=int(data.get("eval_count", 0)),
+		)

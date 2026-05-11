@@ -10,6 +10,18 @@ class ChatMessage:
 	content: str
 
 
+@dataclass(frozen=True)
+class LLMResponse:
+	content: str
+	input_tokens: int
+	output_tokens: int
+
+
 class LLMClient:
-	def generate(self, messages: List[ChatMessage], temperature: float, max_tokens: int) -> str:
+	def generate(
+		self,
+		messages: List[ChatMessage],
+		temperature: float,
+		max_tokens: int,
+	) -> LLMResponse:
 		raise NotImplementedError

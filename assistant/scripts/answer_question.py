@@ -16,11 +16,26 @@ def main() -> None:
 	parser = argparse.ArgumentParser(description="RAG question answering")
 	parser.add_argument("question", help="User question")
 	parser.add_argument("--top-k", type=int, default=5, help="Number of chunks to retrieve")
+	parser.add_argument(
+		"--use-reranking",
+		action="store_true",
+		help="Enable reranking of retrieved chunks",
+	)
+	parser.add_argument(
+		"--use-orchestrator",
+		action="store_true",
+		help="Enable orchestrator flow for the pipeline",
+	)
 	args = parser.parse_args()
 
 	config = load_config()
 	pipeline = RagPipeline(config)
-	response = pipeline.answer(args.question, top_k=args.top_k)
+	response = pipeline.run_pipeline(
+		args.question,
+		top_k=args.top_k,
+		use_reranking=args.use_reranking,
+		use_orchestrator=args.use_orchestrator,
+	)
 
 	print("Answer:\n")
 	print(response.answer)
