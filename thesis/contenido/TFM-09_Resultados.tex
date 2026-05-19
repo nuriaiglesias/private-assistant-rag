@@ -1,7 +1,258 @@
-\chapter{Conclusiones y trabajo futuro}\label{chap:resultados}
-Este último bloque (habitualmente un capítulo; en ocasiones, dos capítulos complementarios) es habitual en todos los tipos de trabajos y presenta el resumen final de tu trabajo y debe servir para informar del alcance y relevancia de tu aportación.\par
+\chapter{Resultados experimentales y conclusiones}\label{chap:resultados}
 
-Suele estructurarse empezando con un resumen del problema tratado, de cómo se ha abordado y de por qué la solución sería válida.
-Es recomendable que incluya también un resumen de las contribuciones del trabajo, en el que relaciones las contribuciones y los resultados obtenidos con los objetivos que habías planteado para el trabajo, discutiendo hasta qué punto has conseguido resolver los objetivos planteados.\par
+\section{Experimento: baseline determinista}\label{sec:baseline}
+Esta seccion documenta el experimento base (determinista) del asistente RAG, con el objetivo de disponer de un punto de partida replicable para comparar con variantes mejoradas (reranking, orquestacion y recuperacion hibrida).
 
-Finalmente, se suele dedicar una última sección a hablar de líneas de trabajo futuro que podrían aportar valor añadido al TFM realizado. La sección debería señalar las perspectivas de futuro que abre el trabajo desarrollado para el campo de estudio definido. En el fondo, debes justificar de qué modo puede emplearse la aportación que has desarrollado y en qué campos.
+\subsection{Corpus y preprocesado}
+Se construyo un corpus publico de UNIR mediante scraping controlado por URLs semilla. El flujo siguio estos pasos:
+
+\begin{itemize}
+		\item Descarga de HTML publico con respeto de \texttt{robots.txt}, \texttt{User-Agent} definido y delay fijo.
+		\item Limpieza de HTML (eliminando menus, breadcrumbs, banners, imagenes y bloques de eventos/promos).
+		\item Conversión a Markdown y almacenamiento con metadatos en frontmatter JSON.
+		\item Copia \textit{raw} opcional del HTML original para reproducibilidad.
+\end{itemize}
+
+Rutas de trabajo utilizadas:
+
+\begin{verbatim}
+assistant/data/unir_seeds.jsonl
+assistant/data/processed/markdown/unir
+assistant/data/raw/unir_html
+\end{verbatim}
+
+Metadatos por documento (ejemplo):
+
+\begin{verbatim}
+source_url, title, section, doc_type, domain, retrieved_at,
+language, content_hash, category, source_name, source_path
+\end{verbatim}
+
+Tras aplicar un umbral minimo de longitud (\texttt{MIN_WORDS=80}) se obtuvo un corpus final de 26 documentos Markdown.
+
+\subsection{Pipeline RAG (baseline)}
+El baseline corresponde a una recuperacion semantica simple (BGE-M3) con Qdrant, sin reranking ni orquestacion. El chunking se realiza por parrafos y frases, con solapamiento por unidades.
+
+Configuracion relevante:
+
+\begin{itemize}
+		\item Embeddings: \texttt{BAAI/bge-m3}
+		\item Vector store: Qdrant (\texttt{http://localhost:6333})
+		\item Chunk size: 800, overlap: 150
+		\item LLM local via Ollama (modelo \texttt{qwen2.5:0.5b-instruct})
+\end{itemize}
+
+Ingesta a Qdrant:
+
+\begin{verbatim}
+python3 assistant/scripts/ingest_documents.py --input data/processed/markdown/unir
+\end{verbatim}
+
+\subsection{Dataset de evaluacion}
+Se definio un conjunto de 30 preguntas en \texttt{assistant/data/evaluation/unir_questions.json} con el siguiente reparto:
+
+\begin{itemize}
+		\item \texttt{single_doc}: 15
+		\item \texttt{multi_doc}: 6
+		\item \texttt{comparative}: 4
+		\item \texttt{unanswerable}: 5
+\end{itemize}
+
+Cada pregunta incluye tipo, categoria, fuentes esperadas (cuando aplica) y, en un subconjunto, \texttt{expected\_facts} para evaluacion semiautomatica.
+
+\subsection{Comandos de evaluacion}
+Evaluacion de retrieval (Hit@K y MRR):
+
+\begin{verbatim}
+python3 assistant/scripts/evaluate_retrieval.py \
+	--questions data/evaluation/unir_questions.json --top-k 5
+\end{verbatim}
+
+Evaluacion de respuestas (expected\_facts y unanswerable):
+
+\begin{verbatim}
+python3 assistant/scripts/evaluate_answers.py \
+	--questions assistant/data/evaluation/unir_questions.json --top-k 5
+\end{verbatim}
+
+\subsection{Resultados del baseline}
+Retrieval (baseline determinista, \texttt{top-k=5}):
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Hits} & \textbf{Total} \\
+\midrule
+Hit@1 & 0.520 & 13 & 25 \\
+Hit@3 & 0.760 & 19 & 25 \\
+MRR  & 0.655 & -- & 25 \\
+\bottomrule
+\end{tabular}
+\caption{Resultados de recuperacion (baseline). Se excluyen 5 preguntas \texttt{unanswerable}.}
+\end{table}
+
+Los resultados anteriores se consideran la linea base para comparar con variantes de reranking y recuperacion hibrida.
+
+\subsection{Resultados: recuperacion hibrida + reranking}
+Esta variante utiliza recuperacion hibrida (denso + BM25) y un reranker ligero sobre un conjunto de candidatos ampliado. La configuracion empleada en la ejecucion fue:
+
+\begin{itemize}
+		\item \texttt{RERANKER\_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2}
+		\item \texttt{RAG\_CANDIDATE\_K=20}
+		\item \texttt{HYBRID\_DENSE\_WEIGHT=0.5}
+		\item \texttt{HYBRID\_BM25\_WEIGHT=0.5}
+\end{itemize}
+
+Comando de evaluacion:
+
+\begin{verbatim}
+python3 assistant/scripts/evaluate_retrieval.py \
+	--questions data/evaluation/unir_questions.json --top-k 5 --use-reranking
+\end{verbatim}
+
+Resultados (\texttt{top-k=5}):
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Hits} & \textbf{Total} \\
+\midrule
+Hit@1 & 0.600 & 15 & 25 \\
+Hit@3 & 0.800 & 20 & 25 \\
+MRR  & 0.724 & -- & 25 \\
+\bottomrule
+\end{tabular}
+\caption{Resultados de recuperacion con recuperacion hibrida + reranking. Se excluyen 5 preguntas \texttt{unanswerable}.}
+\end{table}
+
+\subsection{Comparativa baseline vs hibrido + reranking}
+La Tabla~\ref{tab:comparativa-retrieval} resume el efecto de la mejora sobre las metricas de recuperacion.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Variante} & \textbf{Hit@1} & \textbf{Hit@3} & \textbf{MRR} \\
+\midrule
+Baseline (A) & 0.520 & 0.760 & 0.655 \\
+Hibrido + reranking (B) & 0.600 & 0.800 & 0.724 \\
+\bottomrule
+\end{tabular}
+\caption{Comparativa de recuperacion entre el baseline y la variante mejorada.}
+\label{tab:comparativa-retrieval}
+\end{table}
+
+En terminos relativos, la variante mejorada incrementa Hit@1 en 0.08 y MRR en 0.069, lo que indica una mejor posicion media de la evidencia relevante en los primeros resultados. Estos valores cumplen el criterio de mejora definido en los objetivos.
+
+\subsection{Notas de reproducibilidad}
+Para evitar duplicados si se reinicia la ingesta, se recomienda borrar la coleccion Qdrant antes de reindexar:
+
+\begin{verbatim}
+curl -X DELETE "http://localhost:6333/collections/assistant_docs"
+\end{verbatim}
+
+\section{Orquestador: diseno y funcionalidad (opcion C)}\label{sec:orquestador}
+Esta seccion describe la funcionalidad del orquestador propuesto para el asistente institucional y define el comportamiento que sera comparado posteriormente con el flujo determinista. El objetivo es explicitar las capacidades y reglas de decision, sin introducir aun las metricas experimentales.
+
+\subsection{Capacidades principales}
+El orquestador se organiza en un conjunto de capacidades acotadas, cada una con una responsabilidad clara:
+
+\begin{itemize}
+	\item \textbf{Clasificacion de la consulta.} Clasifica la pregunta como \texttt{single\_doc}, \texttt{multi\_doc}, \texttt{comparative} o \texttt{unanswerable\_risk}. Esta clasificacion se usa para dirigir el flujo; en ejecucion real no se utiliza el campo \texttt{type} del dataset.
+	\item \textbf{Planificacion y descomposicion.} Si la consulta es \texttt{multi\_doc} o \texttt{comparative}, genera subconsultas o entidades objetivo y ejecuta recuperaciones separadas para cada una.
+	\item \textbf{Recuperacion adaptativa.} Ajusta parametros de recuperacion (por ejemplo, \texttt{top-k} o uso de reranking) segun el tipo de consulta y el volumen de evidencia recuperada.
+	\item \textbf{Control de herramientas.} Decide si activar capacidades accionables (p. ej., borrador de correo) y valida que existan parametros minimos antes de ejecutar la herramienta.
+	\item \textbf{Verificacion de evidencia.} Exige evidencia explicita en el contexto recuperado para emitir afirmaciones concretas; en caso contrario, activa el mecanismo de abstencion.
+\end{itemize}
+
+\subsection{Reglas de decision}
+El comportamiento se rige por reglas simples y trazables:
+
+\begin{itemize}
+	\item \textbf{Regla de descomposicion.} Si la consulta contiene dos o mas objetivos informativos, se generan subconsultas y se recupera evidencia para cada una.
+	\item \textbf{Regla comparativa.} Para consultas comparativas, se recupera evidencia separada por entidad y se sintetiza la respuesta en bloques por entidad y un bloque final de diferencias.
+	\item \textbf{Regla de abstencion.} Si se solicita un dato exacto, futuro o altamente especifico y no aparece en el contexto, el sistema responde que no hay informacion suficiente.
+	\item \textbf{Regla de herramientas.} Solo se activa una herramienta si existe evidencia suficiente y la consulta es orientada a accion; si faltan datos (destinatario, motivo, fecha), se solicita aclaracion.
+\end{itemize}
+
+\subsection{Formato de salida}
+La respuesta se estructura segun el tipo de consulta:
+
+\begin{itemize}
+	\item \texttt{single\_doc}: respuesta directa con referencias a la evidencia principal.
+	\item \texttt{multi\_doc}: respuesta por pasos o subtemas, indicando evidencia por bloque.
+	\item \texttt{comparative}: bloques por entidad y un bloque final con diferencias principales.
+	\item \texttt{unanswerable\_risk}: respuesta de abstencion con explicacion breve y sugerencia de reformulacion.
+\end{itemize}
+
+\subsection{Pruebas funcionales del orquestador}
+Para validar el comportamiento esperado del orquestador (opcion C) se realizaron pruebas manuales con preguntas representativas de cada tipo. En todos los casos se verifico la trazabilidad del plan y las herramientas utilizadas en la salida de consola.
+
+\begin{verbatim}
+python3 assistant/scripts/ask.py "¿Como puedo matricularme en UNIR?" --use-orchestrator
+python3 assistant/scripts/ask.py "¿Que pasos debo seguir para matricularme y donde ver los requisitos de acceso?" --use-orchestrator
+python3 assistant/scripts/ask.py "¿Que diferencias hay entre UNIR Alumni y la bolsa de empleo?" --use-orchestrator
+python3 assistant/scripts/ask.py "¿Cual es la tasa exacta de empleabilidad del Master X en 2025?" --use-orchestrator
+python3 assistant/scripts/ask.py "Prepara un correo para solicitar informacion sobre becas y requisitos de acceso en UNIR" --use-orchestrator
+\end{verbatim}
+
+Resultados observados:
+
+\begin{itemize}
+	\item \textbf{Single-doc}: el plan indica \texttt{question\_type=single\_doc} y \texttt{action=answer\_with\_rag}.
+	\item \textbf{Multi-doc}: el plan indica \texttt{question\_type=multi\_doc} y \texttt{action=multi\_step\_rag}, con dos subconsultas (matricula y requisitos).
+	\item \textbf{Comparative}: el plan indica \texttt{question\_type=comparative} y \texttt{action=comparative\_rag}, con salida estructurada por entidad y diferencias.
+	\item \textbf{Unanswerable}: el plan indica \texttt{question\_type=unanswerable\_risk} y \texttt{action=refuse}.
+	\item \textbf{Email action}: el plan indica \texttt{intent=email\_action} y \texttt{action=draft\_email}; se genera borrador y se explicita que el envio requiere confirmacion.
+\end{itemize}
+
+\subsection{Comparacion determinista vs orquestador}
+Para demostrar la utilidad del orquestador frente al flujo determinista, se definio una evaluacion especifica centrada en routing, abstencion y uso de herramientas. La comparacion no utiliza el campo \texttt{type} para decidir el flujo; se emplea solo para evaluar aciertos.
+
+El script \texttt{assistant/scripts/evaluate\_orchestrator.py} calcula, como minimo:
+
+\begin{itemize}
+	\item \textbf{Routing accuracy}: coincidencia entre el tipo predicho y el campo \texttt{type} del dataset.
+	\item \textbf{Refusal rate} en preguntas \texttt{unanswerable}.
+	\item \textbf{Tool calls promedio} por pregunta.
+	\item \textbf{Subqueries > 1} en \texttt{multi\_doc} y \texttt{comparative}.
+	\item \textbf{Deteccion de email action} sobre un dataset reducido de correos.
+	\item \textbf{Registro por pregunta} en JSON para analisis posterior.
+\end{itemize}
+
+Ejemplo de ejecucion comparativa:
+
+\begin{verbatim}
+python3 assistant/scripts/evaluate_orchestrator.py \
+  --questions data/evaluation/unir_questions.json \
+  --email-questions data/evaluation/email_questions.json \
+  --compare
+\end{verbatim}
+
+\subsection{Ajustes recientes del orquestador}
+Durante la fase de pruebas se introdujeron dos ajustes clave. En primer lugar, el orquestador delega las consultas \texttt{single\_doc} al flujo determinista, de forma que solo interviene cuando aporta valor (multi-doc, comparative, unanswerable y acciones). En segundo lugar, el chequeo de evidencia se relajo para permitir respuestas parciales cuando existe contexto recuperado, manteniendo la abstencion solo para preguntas de riesgo o no respondibles.
+
+\subsection{Resultados de calidad de respuesta}
+Se ejecutaron evaluaciones de calidad con \texttt{evaluate\_answers.py} para comparar el determinista y el orquestador sin reranking. La Tabla~\ref{tab:comparativa-respuestas} resume las metricas principales, junto con la tasa de deteccion de correos del orquestador (en el determinista es 0 por ausencia de plan e intencion).
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metrica} & \textbf{Determinista} & \textbf{Orquestador} \\
+\midrule
+Expected facts coverage (answerable) & 0.438 & 0.312 \\
+Refusal rate (unanswerable) & 0.000 & 1.000 \\
+Email detection accuracy & 0.000 & 0.833 \\
+\bottomrule
+\end{tabular}
+\caption{Comparativa de calidad de respuesta (sin reranking) y deteccion de correos.}
+\label{tab:comparativa-respuestas}
+\end{table}
+
+Estos resultados reflejan que el orquestador mejora la abstencion en preguntas no respondibles y habilita la deteccion de acciones, mientras que la cobertura de \textit{expected facts} se ve penalizada por el estilo de respuesta y el criterio de emparejamiento, lo que se discutira en el analisis final.
+
+\section{Conclusiones y trabajo futuro}
+Esta seccion se completara tras implementar las variantes mejoradas y analizar los resultados comparativos.

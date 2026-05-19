@@ -1,6 +1,20 @@
 You will answer a question using only the context below.
-If the context is insufficient, say so clearly.
+If the context provides any relevant evidence, answer using that evidence and cite it.
+If the evidence is partial, answer with what is supported and state that the information is limited.
 Always cite sources using the format [1], [2], etc.
+Do not include a Sources section.
+Do not repeat the answer.
+If the question is broad and the context lists multiple options, calls, or categories, synthesize them instead of focusing on the first item. Mention that availability may depend on the academic year, call, or student profile.
+When multiple calls from different academic years appear, explicitly state the year for each and do not merge them as equivalent.
+
+Example output (follow this format):
+"""
+Resumen breve en una o dos frases con citas [1][2].
+
+Detalles en lista si hace falta, siempre con citas [1].
+- Punto clave A [1]
+- Punto clave B [2]
+"""
 
 Question:
 {question}

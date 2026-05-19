@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 import fitz
 
@@ -30,11 +31,55 @@ def _load_document(path: Path) -> Iterable[Document]:
 	else:
 		text = path.read_text(encoding="utf-8", errors="ignore")
 
+	metadata: dict = {}
+	if path.suffix.lower() == ".md":
+		text, metadata = _parse_frontmatter(text)
+
 	normalized = text.strip()
 	if not normalized:
 		return []
 
-	return [Document(text=normalized, metadata={"source": str(path)})]
+	return [Document(text=normalized, metadata=_normalize_metadata(metadata, path))]
+
+
+def _parse_frontmatter(text: str) -> Tuple[str, dict]:
+	lines = text.splitlines()
+	if not lines or lines[0].strip() != "---":
+		return text, {}
+
+	end_index = None
+	for index in range(1, len(lines)):
+		if lines[index].strip() == "---":
+			end_index = index
+			break
+
+	if end_index is None:
+		return text, {}
+
+	frontmatter = "\n".join(lines[1:end_index]).strip()
+	content = "\n".join(lines[end_index + 1 :])
+	if not frontmatter:
+		return content, {}
+
+	try:
+		metadata = json.loads(frontmatter)
+		if isinstance(metadata, dict):
+			return content, metadata
+	except json.JSONDecodeError:
+		return text, {}
+
+	return content, {}
+
+
+def _normalize_metadata(metadata: dict, path: Path) -> dict:
+	result = dict(metadata) if metadata else {}
+	source_path = result.get("source_path") or str(path)
+	result["source_path"] = source_path
+
+	if "source" not in result:
+		result["source"] = result.get("source_url", source_path)
+
+	return result
 
 
 def _load_pdf(path: Path) -> str:

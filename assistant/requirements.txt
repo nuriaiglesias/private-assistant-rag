@@ -3,6 +3,11 @@ qdrant-client
 sentence-transformers
 streamlit
 requests
+httpx
+beautifulsoup4
+markdownify
+tqdm
+rank-bm25
 python-dotenv
 opentelemetry-api
 opentelemetry-sdk

@@ -17,10 +17,18 @@ from assistant.rag.vector_store import QdrantVectorStore
 def _format_result(payload: dict, score: float, index: int) -> str:
 	text = payload.get("text", "")
 	source = payload.get("source", "unknown")
+	url = payload.get("url", source)
+	title = payload.get("title", "unknown")
 	chunk_index = payload.get("chunk_index", "?")
+	document_id = payload.get("document_id", "?")
+	chunk_id = payload.get("chunk_id", "?")
 	preview = " ".join(text.split())[:240]
 	return (
 		f"{index}. score={score:.4f}\n"
+		f"   title={title}\n"
+		f"   url={url}\n"
+		f"   document_id={document_id}\n"
+		f"   chunk_id={chunk_id}\n"
 		f"   source={source}\n"
 		f"   chunk_index={chunk_index}\n"
 		f"   text={preview}\n"

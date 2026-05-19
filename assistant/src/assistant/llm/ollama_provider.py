@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import List
 
 import requests
@@ -13,6 +14,7 @@ class OllamaClient(LLMClient):
 		self._model = model
 
 	def generate(self, messages: List[ChatMessage], temperature: float, max_tokens: int) -> LLMResponse:
+		timeout_seconds = int(os.getenv("LLM_TIMEOUT_SECONDS", "300"))
 		payload = {
 			"model": self._model,
 			"messages": [message.__dict__ for message in messages],
@@ -25,7 +27,7 @@ class OllamaClient(LLMClient):
 		response = requests.post(
 			f"{self._base_url}/api/chat",
 			json=payload,
-			timeout=120,
+			timeout=timeout_seconds,
 		)
 		response.raise_for_status()
 		data = response.json()

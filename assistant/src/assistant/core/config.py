@@ -19,6 +19,12 @@ class AppConfig:
 	llm_api_key: str
 	llm_temperature: float
 	llm_max_tokens: int
+	reranker_model: str
+	rag_min_score: float
+	rag_candidate_k: int
+	hybrid_corpus_path: str
+	hybrid_dense_weight: float
+	hybrid_bm25_weight: float
 	phoenix_enabled: bool
 	phoenix_host: str
 	phoenix_port: int
@@ -39,6 +45,12 @@ def load_config() -> AppConfig:
 		llm_api_key=os.getenv("LLM_API_KEY", ""),
 		llm_temperature=float(os.getenv("LLM_TEMPERATURE", "0.2")),
 		llm_max_tokens=int(os.getenv("LLM_MAX_TOKENS", "512")),
+		reranker_model=os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3"),
+		rag_min_score=float(os.getenv("RAG_MIN_SCORE", "0.0")),
+		rag_candidate_k=int(os.getenv("RAG_CANDIDATE_K", "20")),
+		hybrid_corpus_path=os.getenv("HYBRID_CORPUS_PATH", "data/processed/markdown/unir"),
+		hybrid_dense_weight=float(os.getenv("HYBRID_DENSE_WEIGHT", "0.5")),
+		hybrid_bm25_weight=float(os.getenv("HYBRID_BM25_WEIGHT", "0.5")),
 		phoenix_enabled=os.getenv("PHOENIX_ENABLED", "false").lower() == "true",
 		phoenix_host=os.getenv("PHOENIX_HOST", "localhost"),
 		phoenix_port=int(os.getenv("PHOENIX_PORT", "4317")),

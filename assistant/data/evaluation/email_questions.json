@@ -1,0 +1,26 @@
+[
+  {
+    "question": "Prepara un correo para solicitar informacion sobre becas en UNIR",
+    "expected_email_action": true
+  },
+  {
+    "question": "Necesito redactar un correo para pedir requisitos de acceso",
+    "expected_email_action": true
+  },
+  {
+    "question": "Envia un correo a la secretaria sobre la matricula",
+    "expected_email_action": true
+  },
+  {
+    "question": "Que requisitos de acceso se piden para estudiar en UNIR?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Que es UNIR Alumni?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Que pasos debo seguir para matricularme?",
+    "expected_email_action": false
+  }
+]

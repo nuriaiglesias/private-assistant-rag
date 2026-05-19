@@ -10,14 +10,22 @@ from assistant.core.config import AppConfig, load_config
 from assistant.llm.base import ChatMessage
 from assistant.llm.factory import build_llm_client
 from assistant.observability.phoenix import configure_tracer
+from assistant.orchestrator.orchestrator import RAGOrchestrator
+from assistant.orchestrator.state import OrchestratorPlan, ToolCall
 from assistant.rag.reranker import Reranker
 from assistant.rag.retriever import RetrievedChunk, Retriever
+from assistant.tools.email_tool import EmailDraft, EmailTool
 
 
 @dataclass(frozen=True)
 class RagResponse:
 	answer: str
 	sources: List[RetrievedChunk]
+	plan: OrchestratorPlan | None = None
+	tool_calls: List[ToolCall] | None = None
+	refused: bool = False
+	evidence_sufficient: bool = True
+	email_draft: EmailDraft | None = None
 
 
 class RagPipeline:
@@ -53,17 +61,43 @@ class RagPipeline:
 			span.set_attribute("rag.use_orchestrator", use_orchestrator)
 
 			if use_orchestrator:
-				answer, retrieved_sources, final_sources, token_usage = self._run_orchestrator(
+				result = self._run_orchestrator(
 					question,
 					top_k=top_k,
 					use_reranking=use_reranking,
 				)
+				answer = result.answer
+				retrieved_sources = result.retrieved_chunks
+				final_sources = result.final_chunks
+				token_usage = result.token_usage
+				plan = result.plan
+				tool_calls = result.tool_calls
+				refused = result.refused
+				evidence_sufficient = result.evidence_sufficient
+				email_draft = result.email_draft
 			else:
-				retrieved_sources = self.retrieve(question, top_k=top_k)
+				candidate_k = self._config.rag_candidate_k if use_reranking else top_k
+				retrieved_sources = self.retrieve(
+					question,
+					top_k=candidate_k,
+					use_hybrid=use_reranking,
+				)
 				final_sources = retrieved_sources
 				if use_reranking:
 					final_sources = self.rerank(question, retrieved_sources, top_k=top_k)
-				answer, token_usage = self.generate_answer(question, final_sources)
+				if self._should_refuse(final_sources):
+					answer = "No dispongo de informacion suficiente en la documentacion recuperada para responder con fiabilidad."
+					token_usage = {"input_tokens": 0, "output_tokens": 0}
+					final_sources = []
+					refused = True
+					evidence_sufficient = False
+				else:
+					answer, token_usage = self.generate_answer(question, final_sources)
+					refused = False
+					evidence_sufficient = True
+				plan = None
+				tool_calls = None
+				email_draft = None
 
 			latency_seconds = time.perf_counter() - start_time
 
@@ -79,11 +113,36 @@ class RagPipeline:
 				top_k=top_k,
 			)
 
-		return RagResponse(answer=answer, sources=final_sources)
+		return RagResponse(
+			answer=answer,
+			sources=final_sources,
+			plan=plan,
+			tool_calls=tool_calls,
+			refused=refused,
+			evidence_sufficient=evidence_sufficient,
+			email_draft=email_draft,
+		)
 
-	def retrieve(self, question: str, top_k: int = 5) -> List[RetrievedChunk]:
+	def _should_refuse(self, sources: List[RetrievedChunk]) -> bool:
+		min_score = self._config.rag_min_score
+		if min_score <= 0:
+			return False
+		if not sources:
+			return True
+
+		max_score = max(chunk.score for chunk in sources)
+		return max_score < min_score
+
+	def retrieve(self, question: str, top_k: int = 5, use_hybrid: bool = False) -> List[RetrievedChunk]:
 		with self._tracer.start_as_current_span("rag.retrieve") as retrieve_span:
-			sources = self._retriever.retrieve(question, top_k=top_k)
+			if use_hybrid:
+				sources = self._retriever.retrieve_hybrid(
+					question,
+					top_k=top_k,
+					candidate_k=top_k,
+				)
+			else:
+				sources = self._retriever.retrieve(question, top_k=top_k)
 			retrieve_span.set_attribute("rag.sources", len(sources))
 			retrieve_span.set_attribute(
 				"rag.source_names",
@@ -107,10 +166,21 @@ class RagPipeline:
 			rerank_span.set_attribute("rag.reranked", len(reranked))
 		return reranked
 
-	def generate_answer(self, question: str, sources: List[RetrievedChunk]) -> tuple[str, dict[str, int]]:
+	def generate_answer(
+		self,
+		question: str,
+		sources: List[RetrievedChunk],
+		*,
+		answer_style: str = "direct",
+	) -> tuple[str, dict[str, int]]:
 		context = self._format_context(sources)
 		system_prompt = self._read_prompt("system_base.txt")
-		user_prompt = self._read_prompt("rag_answer.txt").format(
+		prompt_name = "rag_answer.txt"
+		if answer_style == "comparison":
+			prompt_name = "rag_answer_comparison.txt"
+		elif answer_style == "structured":
+			prompt_name = "rag_answer_multidoc.txt"
+		user_prompt = self._read_prompt(prompt_name).format(
 			question=question,
 			context=context,
 		)
@@ -200,19 +270,29 @@ class RagPipeline:
 		*,
 		top_k: int,
 		use_reranking: bool,
-	) -> tuple[str, List[RetrievedChunk], List[RetrievedChunk], dict[str, int]]:
+	) -> "OrchestratorResult":
+		from assistant.orchestrator.state import OrchestratorResult
+
 		with self._tracer.start_as_current_span("rag.orchestrator") as span:
 			steps = ["retrieve", "generate"]
 			if use_reranking:
 				steps.insert(1, "rerank")
 			span.set_attribute("rag.orchestrator_steps", ", ".join(steps))
 
-			retrieved_sources = self.retrieve(question, top_k=top_k)
-			final_sources = retrieved_sources
-			if use_reranking:
-				final_sources = self.rerank(question, retrieved_sources, top_k=top_k)
-			answer, token_usage = self.generate_answer(question, final_sources)
-			return answer, retrieved_sources, final_sources, token_usage
+			candidate_k = self._config.rag_candidate_k if use_reranking else top_k
+			orchestrator = RAGOrchestrator(
+				retrieve=self.retrieve,
+				rerank=self.rerank,
+				generate_answer=lambda q, chunks, style: self.generate_answer(q, chunks, answer_style=style),
+				min_score=self._config.rag_min_score,
+				email_tool=EmailTool(),
+			)
+			return orchestrator.run(
+				question,
+				top_k=top_k,
+				use_reranking=use_reranking,
+				candidate_k=candidate_k,
+			)
 
 	def _read_prompt(self, filename: str) -> str:
 		path = self._prompts_dir / filename
@@ -221,9 +301,7 @@ class RagPipeline:
 	def _format_context(self, sources: List[RetrievedChunk]) -> str:
 		lines: List[str] = []
 		for index, chunk in enumerate(sources, start=1):
-			lines.append(
-				f"[{index}] source={chunk.source} chunk={chunk.chunk_index}\n{chunk.text}"
-			)
+			lines.append(f"[{index}]\n{chunk.text}")
 		return "\n\n".join(lines)
 
 	def _variant_name(self, use_reranking: bool, use_orchestrator: bool) -> str:

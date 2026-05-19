@@ -58,6 +58,27 @@ python scripts/ask.py "question" --use-reranking --use-orchestrator
 
 	print("Answer:\n")
 	print(response.answer)
+	if response.plan:
+		print("\nPlan:")
+		print(f"- question_type: {response.plan.question_type}")
+		print(f"- intent: {response.plan.intent}")
+		print(f"- action: {response.plan.action}")
+		if response.plan.subqueries:
+			print("- subqueries:")
+			for index, subquery in enumerate(response.plan.subqueries, start=1):
+				print(f"  {index}. {subquery}")
+	if response.tool_calls:
+		print("- tools_used:")
+		for call in response.tool_calls:
+			print(f"  - {call.tool_name}")
+	if response.email_draft:
+		print("\nEmail draft:\n")
+		to_value = response.email_draft.to or "[pending]"
+		print(f"To: {to_value}")
+		print(f"Subject: {response.email_draft.subject}")
+		print(response.email_draft.body)
+		print("\nEmail status:")
+		print("Borrador preparado. El envio requiere confirmacion explicita del usuario.")
 	print("\nSources:")
 	for index, chunk in enumerate(response.sources, start=1):
 		name = Path(chunk.source).name

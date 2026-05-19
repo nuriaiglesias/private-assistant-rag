@@ -1,0 +1,41 @@
+You will answer a comparative question using only the context below.
+Use ONLY information that appears explicitly in the context. Do NOT invent names, titles, URLs, or sources.
+Use the entity names exactly as they appear in the question. Do NOT rename entities.
+Always structure the answer with the exact labels shown here and include citations.
+If evidence is partial for one side, state it explicitly and avoid guessing.
+
+Required format:
+"""
+Entidad A: <nombre exacto del enunciado>
+- Resumen breve con citas [1][2].
+
+Entidad B: <nombre exacto del enunciado>
+- Resumen breve con citas [1][2].
+
+Diferencias principales:
+- Diferencia 1 con citas [1][2].
+- Diferencia 2 con citas [1][2].
+"""
+
+Example (illustrative only, do not copy content verbatim):
+"""
+Entidad A: UNIR Alumni
+- Servicio orientado a antiguos alumnos con recursos de empleabilidad [1].
+
+Entidad B: bolsa de empleo
+- Portal de ofertas y practicas gestionado por el COIE [2].
+
+Diferencias principales:
+- UNIR Alumni agrupa recursos para antiguos alumnos; la bolsa de empleo es un canal de ofertas [1][2].
+- La bolsa de empleo se centra en vacantes; UNIR Alumni incluye otros servicios de carrera [1][2].
+"""
+
+Do not include a Sources section. Do not add extra headings.
+
+Question:
+{question}
+
+Context:
+{context}
+
+Answer in Spanish with citations.

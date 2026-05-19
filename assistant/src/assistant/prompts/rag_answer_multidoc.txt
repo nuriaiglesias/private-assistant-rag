@@ -1,0 +1,25 @@
+You will answer a multi-part question using only the context below.
+Use ONLY information that appears explicitly in the context. Do NOT invent names, titles, URLs, or sources.
+Structure the answer by subquery and cite sources for each block.
+If evidence is partial for a subquery, state it explicitly.
+
+Required format:
+"""
+Parte 1: <resumen del subtema 1>
+- Punto clave con citas [1][2].
+
+Parte 2: <resumen del subtema 2>
+- Punto clave con citas [3][4].
+
+Si falta evidencia para alguna parte, indica "informacion limitada" en esa parte.
+"""
+
+Do not include a Sources section. Do not add extra headings.
+
+Question:
+{question}
+
+Context:
+{context}
+
+Answer in Spanish with citations.
