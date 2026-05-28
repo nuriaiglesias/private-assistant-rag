@@ -37,6 +37,61 @@ class RAGOrchestrator:
 		use_reranking: bool,
 		candidate_k: int,
 	) -> OrchestratorResult:
+		# --- Clarification logic: ask if question is ambiguous or incomplete ---
+
+		clarification_needed, clarification_question = self._needs_clarification(question)
+		if clarification_needed:
+			# Generar respuesta general y añadir la pregunta de clarificación al final
+			plan = build_plan(question)
+			# Recuperar chunks generales
+			if plan.question_type == "single_doc" and plan.intent == "information":
+				result = self._run_single_doc(
+					question=question,
+					plan=plan,
+					top_k=top_k,
+					use_reranking=use_reranking,
+					candidate_k=candidate_k,
+				)
+			elif plan.question_type == "multi_doc" and plan.intent == "information":
+				result = self._run_multi_doc(
+					question=question,
+					plan=plan,
+					top_k=top_k,
+					use_reranking=use_reranking,
+					candidate_k=candidate_k,
+				)
+			else:
+				# Si no se puede generar respuesta, solo pregunta de clarificación
+				return OrchestratorResult(
+					question=question,
+					plan=None,
+					retrieved_chunks=[],
+					final_chunks=[],
+					answer=clarification_question,
+					refused=False,
+					evidence_sufficient=False,
+					token_usage={"input_tokens": 0, "output_tokens": 0},
+					email_draft=None,
+					tool_calls=[],
+				)
+			# Añadir la pregunta de clarificación al final de la respuesta
+			respuesta = result.answer.strip()
+			if not respuesta.endswith("\n"):
+				respuesta += "\n"
+			respuesta += f"\n{clarification_question}"
+			return OrchestratorResult(
+				question=question,
+				plan=result.plan,
+				retrieved_chunks=result.retrieved_chunks,
+				final_chunks=result.final_chunks,
+				answer=respuesta,
+				refused=False,
+				evidence_sufficient=result.evidence_sufficient,
+				token_usage=result.token_usage,
+				email_draft=result.email_draft,
+				tool_calls=result.tool_calls,
+			)
+
 		plan = build_plan(question)
 		if plan.question_type == "single_doc" and plan.intent == "information":
 			return self._run_single_doc(
@@ -57,6 +112,30 @@ class RAGOrchestrator:
 
 		retrieved_chunks: list[RetrievedChunk] = []
 		tool_calls: list[ToolCall] = []
+
+
+	def _needs_clarification(self, question: str) -> tuple[bool, str]:
+		# Simple heuristics: ambiguous if too short, generic, or contains certain patterns
+		q = question.strip().lower()
+		if len(q) < 10:
+			return True, "¿Podrías especificar con más detalle tu consulta?"
+		generic_starts = [
+			"cuanto cuesta", "precio", "informacion sobre", "quiero saber", "detalles de", "explica", "dime sobre", "ayuda con"
+		]
+		for start in generic_starts:
+			if q.startswith(start):
+				return True, "¿Podrías concretar a qué te refieres exactamente? Por ejemplo, ¿a qué programa, trámite o tema concreto?"
+		# Example: matrícula
+		if "matricula" in q or "matricularme" in q:
+			if not ("grado" in q or "master" in q or "doctorado" in q):
+				return True, "¿Te refieres a matrícula de grado, máster u otro tipo de estudio? ¿De qué programa concreto?"
+		# Example: beca
+		if "beca" in q and not ("tipo" in q or "universidad" in q or "oficial" in q):
+			return True, "¿Quieres información sobre becas propias de la universidad, becas oficiales o ambas?"
+		# Add more domain-specific clarifications as needed
+		return False, ""
+
+	# ...existing code...
 
 		fetch_k = candidate_k if use_reranking else top_k
 		for subquery in plan.subqueries:

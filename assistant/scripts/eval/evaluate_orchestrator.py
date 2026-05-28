@@ -7,7 +7,7 @@ import sys
 import unicodedata
 from typing import Any, Dict, List
 
-SRC_ROOT = Path(__file__).resolve().parents[1] / "src"
+SRC_ROOT = Path(__file__).resolve().parents[2] / "src"
 if str(SRC_ROOT) not in sys.path:
 	sys.path.insert(0, str(SRC_ROOT))
 
@@ -169,12 +169,12 @@ def main() -> None:
 	parser = argparse.ArgumentParser(description="Evaluate orchestrator routing and tool usage")
 	parser.add_argument(
 		"--questions",
-		default="data/evaluation/unir_questions.json",
+		default="data/evaluation/datasets/unir_questions.json",
 		help="Path to unir_questions.json",
 	)
 	parser.add_argument(
 		"--email-questions",
-		default="data/evaluation/email_questions.json",
+		default="data/evaluation/datasets/email_questions.json",
 		help="Path to email_questions.json",
 	)
 	parser.add_argument("--top-k", type=int, default=5, help="Number of chunks to retrieve")
@@ -196,7 +196,7 @@ def main() -> None:
 	)
 	parser.add_argument(
 		"--output",
-		default="data/evaluation/orchestrator_results.jsonl",
+		default="data/evaluation/results/orchestrator_results.jsonl",
 		help="Path to JSONL output",
 	)
 	parser.add_argument("--limit", type=int, default=None, help="Limit number of questions")
@@ -269,9 +269,9 @@ def main() -> None:
 		_write_jsonl(combined_path, result_rows)
 		print(f"Results written to {combined_path}")
 	else:
-		if args.mode and output_path == Path("data/evaluation/orchestrator_results.jsonl"):
+		if args.mode and output_path == Path("data/evaluation/results/orchestrator_results.jsonl"):
 			output_path = Path(
-				f"data/evaluation/orchestrator_results_{args.mode}.jsonl"
+				f"data/evaluation/results/orchestrator_results_{args.mode}.jsonl"
 			)
 		_write_jsonl(output_path, result_rows)
 		print(f"Results written to {output_path}")

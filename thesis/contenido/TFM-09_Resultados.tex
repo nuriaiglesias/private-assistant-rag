@@ -1,258 +1,208 @@
-\chapter{Resultados experimentales y conclusiones}\label{chap:resultados}
+\chapter{Resultados experimentales}\label{chap:resultados}
 
-\section{Experimento: baseline determinista}\label{sec:baseline}
-Esta seccion documenta el experimento base (determinista) del asistente RAG, con el objetivo de disponer de un punto de partida replicable para comparar con variantes mejoradas (reranking, orquestacion y recuperacion hibrida).
+Este capítulo presenta los resultados obtenidos durante la evaluación del asistente institucional desarrollado. El objetivo principal es analizar el comportamiento de las distintas variantes del sistema desde tres perspectivas complementarias: la calidad de la recuperación documental, la calidad de las respuestas generadas y la utilidad funcional del orquestador.
 
-\subsection{Corpus y preprocesado}
-Se construyo un corpus publico de UNIR mediante scraping controlado por URLs semilla. El flujo siguio estos pasos:
+La evaluación se organiza en varios bloques. En primer lugar, se describe brevemente el corpus utilizado, el dataset de evaluación y las métricas empleadas. A continuación, se comparan los resultados de recuperación del baseline determinista frente a la variante con recuperación híbrida y reranking. Posteriormente, se analiza la calidad de las respuestas del flujo determinista y del orquestador. Finalmente, se discuten los resultados obtenidos, destacando las mejoras observadas y las principales limitaciones del proceso de evaluación.
 
-\begin{itemize}
-		\item Descarga de HTML publico con respeto de \texttt{robots.txt}, \texttt{User-Agent} definido y delay fijo.
-		\item Limpieza de HTML (eliminando menus, breadcrumbs, banners, imagenes y bloques de eventos/promos).
-		\item Conversión a Markdown y almacenamiento con metadatos en frontmatter JSON.
-		\item Copia \textit{raw} opcional del HTML original para reproducibilidad.
-\end{itemize}
+\section{Diseño de la evaluación}\label{sec:diseno-evaluacion}
 
-Rutas de trabajo utilizadas:
+La evaluación experimental se diseñó con el propósito de comparar el comportamiento del sistema en diferentes configuraciones. Para ello, se utilizó un corpus documental construido a partir de información pública de UNIR y un conjunto de preguntas diseñado específicamente para cubrir distintos tipos de consulta: preguntas respondibles desde un único documento, preguntas que requieren combinar información de varias fuentes, preguntas comparativas y preguntas no respondibles a partir del corpus disponible.
 
-\begin{verbatim}
-assistant/data/unir_seeds.jsonl
-assistant/data/processed/markdown/unir
-assistant/data/raw/unir_html
-\end{verbatim}
+\subsection{Corpus y dataset de evaluación}\label{subsec:corpus-dataset}
 
-Metadatos por documento (ejemplo):
+La evaluación se realizó sobre un corpus documental construido a partir de información pública del dominio institucional. Tras el proceso de recopilación, limpieza, normalización y segmentación descrito en el capítulo anterior, el corpus final quedó formado por 26 documentos en formato Markdown. Este formato se seleccionó porque permite conservar una estructura textual sencilla, facilitar la segmentación por bloques de contenido y mantener una representación homogénea de fuentes originalmente heterogéneas.
 
-\begin{verbatim}
-source_url, title, section, doc_type, domain, retrieved_at,
-language, content_hash, category, source_name, source_path
-\end{verbatim}
+A partir de este corpus se construyó manualmente un dataset de evaluación compuesto por 30 preguntas representativas del dominio. El objetivo de este conjunto no es constituir un benchmark general de asistentes institucionales, sino proporcionar una validación controlada del prototipo y permitir la comparación de distintas variantes del sistema bajo las mismas condiciones experimentales.
 
-Tras aplicar un umbral minimo de longitud (\texttt{MIN_WORDS=80}) se obtuvo un corpus final de 26 documentos Markdown.
+Las preguntas se diseñaron buscando cubrir escenarios habituales de uso en un contexto universitario. En concreto, se incluyeron preguntas respondibles desde un único documento, preguntas que requieren combinar información procedente de varias fuentes, preguntas comparativas y preguntas no respondibles a partir del corpus disponible. Esta última categoría se incorporó de forma deliberada para evaluar la capacidad del sistema de abstenerse cuando no existe evidencia suficiente, un comportamiento especialmente importante en asistentes institucionales donde la generación de información no fundamentada puede afectar a la confianza del usuario.
 
-\subsection{Pipeline RAG (baseline)}
-El baseline corresponde a una recuperacion semantica simple (BGE-M3) con Qdrant, sin reranking ni orquestacion. El chunking se realiza por parrafos y frases, con solapamiento por unidades.
+Para las preguntas respondibles se anotó manualmente la fuente esperada, es decir, el documento o documentos en los que debía encontrarse la evidencia necesaria para responder. Además, en un subconjunto de preguntas se definieron hechos esperados, entendidos como unidades mínimas de información que una respuesta correcta debería incluir. Esta anotación permitió evaluar no solo si el sistema recuperaba la fuente adecuada, sino también si la respuesta generada incorporaba los elementos informativos relevantes.
 
-Configuracion relevante:
-
-\begin{itemize}
-		\item Embeddings: \texttt{BAAI/bge-m3}
-		\item Vector store: Qdrant (\texttt{http://localhost:6333})
-		\item Chunk size: 800, overlap: 150
-		\item LLM local via Ollama (modelo \texttt{qwen2.5:0.5b-instruct})
-\end{itemize}
-
-Ingesta a Qdrant:
-
-\begin{verbatim}
-python3 assistant/scripts/ingest_documents.py --input data/processed/markdown/unir
-\end{verbatim}
-
-\subsection{Dataset de evaluacion}
-Se definio un conjunto de 30 preguntas en \texttt{assistant/data/evaluation/unir_questions.json} con el siguiente reparto:
-
-\begin{itemize}
-		\item \texttt{single_doc}: 15
-		\item \texttt{multi_doc}: 6
-		\item \texttt{comparative}: 4
-		\item \texttt{unanswerable}: 5
-\end{itemize}
-
-Cada pregunta incluye tipo, categoria, fuentes esperadas (cuando aplica) y, en un subconjunto, \texttt{expected\_facts} para evaluacion semiautomatica.
-
-\subsection{Comandos de evaluacion}
-Evaluacion de retrieval (Hit@K y MRR):
-
-\begin{verbatim}
-python3 assistant/scripts/evaluate_retrieval.py \
-	--questions data/evaluation/unir_questions.json --top-k 5
-\end{verbatim}
-
-Evaluacion de respuestas (expected\_facts y unanswerable):
-
-\begin{verbatim}
-python3 assistant/scripts/evaluate_answers.py \
-	--questions assistant/data/evaluation/unir_questions.json --top-k 5
-\end{verbatim}
-
-\subsection{Resultados del baseline}
-Retrieval (baseline determinista, \texttt{top-k=5}):
+El tamaño del dataset constituye una limitación de la evaluación, ya que 30 preguntas no permiten extraer conclusiones generalizables sobre cualquier asistente institucional. No obstante, se considera adecuado para una primera validación académica del prototipo, dado que permite comparar de forma controlada las variantes implementadas, analizar errores de recuperación y respuesta, y estudiar el comportamiento del orquestador ante distintos tipos de consulta. Por tanto, los resultados deben interpretarse como una evaluación inicial y controlada, no como una medición definitiva del rendimiento del sistema en producción.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lccc}
-\toprule
-\textbf{Metric} & \textbf{Value} & \textbf{Hits} & \textbf{Total} \\
-\midrule
-Hit@1 & 0.520 & 13 & 25 \\
-Hit@3 & 0.760 & 19 & 25 \\
-MRR  & 0.655 & -- & 25 \\
-\bottomrule
+\begin{tabular}{lr}
+\hline
+\textbf{Elemento} & \textbf{Valor} \\
+\hline
+Documentos finales del corpus & 26 \\
+URLs semilla consideradas & 30 \\
+Páginas descargadas correctamente & 30 \\
+Páginas descartadas durante la limpieza & 4 \\
+Formato de almacenamiento & Markdown \\
+Tamaño medio de documento & 1557,92 palabras \\
+Preguntas totales del dataset & 30 \\
+Preguntas respondibles & 25 \\
+Preguntas no respondibles & 5 \\
+Preguntas con fuente esperada anotada & 25 \\
+Preguntas con hechos esperados anotados & Pendiente de extraer \\
+\hline
 \end{tabular}
-\caption{Resultados de recuperacion (baseline). Se excluyen 5 preguntas \texttt{unanswerable}.}
+\caption{Resumen del corpus y del dataset utilizados en la evaluación.}
+\label{tab:resumen_dataset}
 \end{table}
 
-Los resultados anteriores se consideran la linea base para comparar con variantes de reranking y recuperacion hibrida.
-
-\subsection{Resultados: recuperacion hibrida + reranking}
-Esta variante utiliza recuperacion hibrida (denso + BM25) y un reranker ligero sobre un conjunto de candidatos ampliado. La configuracion empleada en la ejecucion fue:
-
-\begin{itemize}
-		\item \texttt{RERANKER\_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2}
-		\item \texttt{RAG\_CANDIDATE\_K=20}
-		\item \texttt{HYBRID\_DENSE\_WEIGHT=0.5}
-		\item \texttt{HYBRID\_BM25\_WEIGHT=0.5}
-\end{itemize}
-
-Comando de evaluacion:
-
-\begin{verbatim}
-python3 assistant/scripts/evaluate_retrieval.py \
-	--questions data/evaluation/unir_questions.json --top-k 5 --use-reranking
-\end{verbatim}
-
-Resultados (\texttt{top-k=5}):
+Estos valores reflejan un proceso de recopilación acotado y controlado. Aunque el número de documentos finales no es elevado, el corpus se construyó a partir de fuentes seleccionadas manualmente y revisadas durante la limpieza, priorizando la relevancia institucional, la trazabilidad de la fuente y la utilidad para el conjunto de preguntas de evaluación. Por tanto, el objetivo no es maximizar el volumen documental, sino disponer de una base suficientemente representativa y coherente para validar el comportamiento del prototipo bajo condiciones comparables.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lccc}
-\toprule
-\textbf{Metric} & \textbf{Value} & \textbf{Hits} & \textbf{Total} \\
-\midrule
-Hit@1 & 0.600 & 15 & 25 \\
-Hit@3 & 0.800 & 20 & 25 \\
-MRR  & 0.724 & -- & 25 \\
-\bottomrule
+\begin{tabular}{lr}
+\hline
+\textbf{Tipo de pregunta} & \textbf{Número de preguntas} \\
+\hline
+Respondible desde un único documento & 15 \\
+Respondible con combinación de documentos & 6 \\
+Comparativa & 4 \\
+No respondible & 5 \\
+\hline
 \end{tabular}
-\caption{Resultados de recuperacion con recuperacion hibrida + reranking. Se excluyen 5 preguntas \texttt{unanswerable}.}
+\caption{Distribución de preguntas del dataset de evaluación.}
+\label{tab:distribucion_preguntas}
 \end{table}
 
-\subsection{Comparativa baseline vs hibrido + reranking}
-La Tabla~\ref{tab:comparativa-retrieval} resume el efecto de la mejora sobre las metricas de recuperacion.
+\subsection{Métricas empleadas}\label{subsec:metricas}
+
+Para evaluar el sistema se utilizaron métricas diferentes en función del componente analizado. En la fase de recuperación documental se emplearon métricas habituales en sistemas de búsqueda de información:
+
+\begin{itemize}
+	\item \textbf{Hit@1}: indica si la fuente esperada aparece en la primera posición de los resultados recuperados.
+	\item \textbf{Hit@3}: indica si la fuente esperada aparece entre los tres primeros resultados recuperados.
+	\item \textbf{MRR}: mide la posición media recíproca de la primera fuente relevante recuperada.
+\end{itemize}
+
+Para evaluar la calidad de las respuestas se utilizaron métricas orientadas al contenido generado:
+
+\begin{itemize}
+	\item \textbf{Cobertura de hechos esperados}: proporción de hechos esperados presentes en la respuesta generada.
+	\item \textbf{Tasa de abstención}: proporción de preguntas no respondibles en las que el sistema evita responder sin evidencia suficiente.
+	\item \textbf{Exactitud en la detección de intención de correo}: capacidad del orquestador para identificar solicitudes que requieren activar la herramienta de generación de borradores.
+\end{itemize}
+
+\subsection{Variantes evaluadas}\label{subsec:variantes-evaluadas}
+
+La evaluación se centró en tres variantes principales del sistema, representativas de distintos niveles de complejidad. La primera variante corresponde al baseline determinista, basado en recuperación semántica simple. La segunda introduce recuperación híbrida y reranking para mejorar la ordenación de la evidencia recuperada. La tercera incorpora un orquestador encargado de clasificar la consulta, decidir el flujo de ejecución y activar herramientas cuando corresponde.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lccc}
+\begin{tabular}{llll}
 \toprule
-\textbf{Variante} & \textbf{Hit@1} & \textbf{Hit@3} & \textbf{MRR} \\
+\textbf{Variante} & \textbf{Recuperación} & \textbf{Reranking} & \textbf{Orquestador} \\
 \midrule
-Baseline (A) & 0.520 & 0.760 & 0.655 \\
-Hibrido + reranking (B) & 0.600 & 0.800 & 0.724 \\
+A: Baseline determinista & Densa & No & No \\
+B: Híbrida + reranking & Densa + léxica & Sí & No \\
+C: Orquestador & Adaptativa & No & Sí \\
 \bottomrule
 \end{tabular}
-\caption{Comparativa de recuperacion entre el baseline y la variante mejorada.}
-\label{tab:comparativa-retrieval}
+\caption{Variantes evaluadas durante los experimentos.}
+\label{tab:variantes-evaluadas}
 \end{table}
 
-En terminos relativos, la variante mejorada incrementa Hit@1 en 0.08 y MRR en 0.069, lo que indica una mejor posicion media de la evidencia relevante en los primeros resultados. Estos valores cumplen el criterio de mejora definido en los objetivos.
+La evaluación separa deliberadamente la mejora del componente de recuperación y la evaluación funcional del orquestador. 
+De este modo, la variante B permite analizar el impacto de la recuperación híbrida y el \textit{reranking} sobre la calidad de la evidencia recuperada, mientras que la variante C permite estudiar el efecto del orquestador sobre el control del flujo, la abstención ante preguntas no respondibles y la activación de herramientas. 
+La combinación completa de ambas líneas en una variante adicional, basada en orquestador con recuperación híbrida y \textit{reranking}, queda planteada como una extensión prevista para la siguiente iteración del trabajo.
 
-\subsection{Notas de reproducibilidad}
-Para evitar duplicados si se reinicia la ingesta, se recomienda borrar la coleccion Qdrant antes de reindexar:
 
-\begin{verbatim}
-curl -X DELETE "http://localhost:6333/collections/assistant_docs"
-\end{verbatim}
+\section{Resultados de recuperación}\label{sec:resultados-recuperacion}
 
-\section{Orquestador: diseno y funcionalidad (opcion C)}\label{sec:orquestador}
-Esta seccion describe la funcionalidad del orquestador propuesto para el asistente institucional y define el comportamiento que sera comparado posteriormente con el flujo determinista. El objetivo es explicitar las capacidades y reglas de decision, sin introducir aun las metricas experimentales.
+En esta sección se comparan los resultados obtenidos por el baseline determinista y la variante con recuperación híbrida y reranking. La evaluación se realiza sobre las 25 preguntas del dataset que cuentan con una fuente esperada, excluyendo las preguntas no respondibles.
 
-\subsection{Capacidades principales}
-El orquestador se organiza en un conjunto de capacidades acotadas, cada una con una responsabilidad clara:
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Variante} & \textbf{Hit@1} & \textbf{$\Delta$} & \textbf{Hit@3} & \textbf{$\Delta$} & \textbf{MRR} & \textbf{$\Delta$} \\
+\midrule
+A: Baseline determinista & 0.520 & -- & 0.760 & -- & 0.655 & -- \\
+B: Híbrida + reranking & 0.600 & +0.080 & 0.800 & +0.040 & 0.724 & +0.069 \\
+\bottomrule
+\end{tabular}
+\caption{Comparativa de recuperación entre el baseline y la variante con recuperación híbrida y reranking.}
+\label{tab:resultados-recuperacion}
+\end{table}
 
-\begin{itemize}
-	\item \textbf{Clasificacion de la consulta.} Clasifica la pregunta como \texttt{single\_doc}, \texttt{multi\_doc}, \texttt{comparative} o \texttt{unanswerable\_risk}. Esta clasificacion se usa para dirigir el flujo; en ejecucion real no se utiliza el campo \texttt{type} del dataset.
-	\item \textbf{Planificacion y descomposicion.} Si la consulta es \texttt{multi\_doc} o \texttt{comparative}, genera subconsultas o entidades objetivo y ejecuta recuperaciones separadas para cada una.
-	\item \textbf{Recuperacion adaptativa.} Ajusta parametros de recuperacion (por ejemplo, \texttt{top-k} o uso de reranking) segun el tipo de consulta y el volumen de evidencia recuperada.
-	\item \textbf{Control de herramientas.} Decide si activar capacidades accionables (p. ej., borrador de correo) y valida que existan parametros minimos antes de ejecutar la herramienta.
-	\item \textbf{Verificacion de evidencia.} Exige evidencia explicita en el contexto recuperado para emitir afirmaciones concretas; en caso contrario, activa el mecanismo de abstencion.
-\end{itemize}
+Los resultados muestran una mejora consistente de la variante híbrida con reranking respecto al baseline determinista. En concreto, Hit@1 aumenta de 0.520 a 0.600, lo que indica que la fuente esperada aparece con mayor frecuencia en la primera posición. Asimismo, Hit@3 mejora de 0.760 a 0.800, reflejando una mayor presencia de evidencia relevante entre los primeros resultados recuperados.
 
-\subsection{Reglas de decision}
-El comportamiento se rige por reglas simples y trazables:
+La mejora también se observa en MRR, que pasa de 0.655 a 0.724. Este incremento sugiere que la evidencia relevante no solo aparece con mayor frecuencia en el conjunto de resultados, sino que además tiende a situarse en posiciones más altas dentro del ranking. Por tanto, la incorporación de recuperación híbrida y reranking contribuye positivamente a la calidad del componente de recuperación.
 
-\begin{itemize}
-	\item \textbf{Regla de descomposicion.} Si la consulta contiene dos o mas objetivos informativos, se generan subconsultas y se recupera evidencia para cada una.
-	\item \textbf{Regla comparativa.} Para consultas comparativas, se recupera evidencia separada por entidad y se sintetiza la respuesta en bloques por entidad y un bloque final de diferencias.
-	\item \textbf{Regla de abstencion.} Si se solicita un dato exacto, futuro o altamente especifico y no aparece en el contexto, el sistema responde que no hay informacion suficiente.
-	\item \textbf{Regla de herramientas.} Solo se activa una herramienta si existe evidencia suficiente y la consulta es orientada a accion; si faltan datos (destinatario, motivo, fecha), se solicita aclaracion.
-\end{itemize}
+\section{Resultados de calidad de respuesta}\label{sec:resultados-respuesta}
 
-\subsection{Formato de salida}
-La respuesta se estructura segun el tipo de consulta:
+Además de evaluar la recuperación documental, se analizaron las respuestas generadas por el sistema. Esta evaluación permite observar si las mejoras introducidas en la arquitectura se traducen en respuestas más completas, más seguras o más controladas.
 
-\begin{itemize}
-	\item \texttt{single\_doc}: respuesta directa con referencias a la evidencia principal.
-	\item \texttt{multi\_doc}: respuesta por pasos o subtemas, indicando evidencia por bloque.
-	\item \texttt{comparative}: bloques por entidad y un bloque final con diferencias principales.
-	\item \texttt{unanswerable\_risk}: respuesta de abstencion con explicacion breve y sugerencia de reformulacion.
-\end{itemize}
-
-\subsection{Pruebas funcionales del orquestador}
-Para validar el comportamiento esperado del orquestador (opcion C) se realizaron pruebas manuales con preguntas representativas de cada tipo. En todos los casos se verifico la trazabilidad del plan y las herramientas utilizadas en la salida de consola.
-
-\begin{verbatim}
-python3 assistant/scripts/ask.py "¿Como puedo matricularme en UNIR?" --use-orchestrator
-python3 assistant/scripts/ask.py "¿Que pasos debo seguir para matricularme y donde ver los requisitos de acceso?" --use-orchestrator
-python3 assistant/scripts/ask.py "¿Que diferencias hay entre UNIR Alumni y la bolsa de empleo?" --use-orchestrator
-python3 assistant/scripts/ask.py "¿Cual es la tasa exacta de empleabilidad del Master X en 2025?" --use-orchestrator
-python3 assistant/scripts/ask.py "Prepara un correo para solicitar informacion sobre becas y requisitos de acceso en UNIR" --use-orchestrator
-\end{verbatim}
-
-Resultados observados:
-
-\begin{itemize}
-	\item \textbf{Single-doc}: el plan indica \texttt{question\_type=single\_doc} y \texttt{action=answer\_with\_rag}.
-	\item \textbf{Multi-doc}: el plan indica \texttt{question\_type=multi\_doc} y \texttt{action=multi\_step\_rag}, con dos subconsultas (matricula y requisitos).
-	\item \textbf{Comparative}: el plan indica \texttt{question\_type=comparative} y \texttt{action=comparative\_rag}, con salida estructurada por entidad y diferencias.
-	\item \textbf{Unanswerable}: el plan indica \texttt{question\_type=unanswerable\_risk} y \texttt{action=refuse}.
-	\item \textbf{Email action}: el plan indica \texttt{intent=email\_action} y \texttt{action=draft\_email}; se genera borrador y se explicita que el envio requiere confirmacion.
-\end{itemize}
-
-\subsection{Comparacion determinista vs orquestador}
-Para demostrar la utilidad del orquestador frente al flujo determinista, se definio una evaluacion especifica centrada en routing, abstencion y uso de herramientas. La comparacion no utiliza el campo \texttt{type} para decidir el flujo; se emplea solo para evaluar aciertos.
-
-El script \texttt{assistant/scripts/evaluate\_orchestrator.py} calcula, como minimo:
-
-\begin{itemize}
-	\item \textbf{Routing accuracy}: coincidencia entre el tipo predicho y el campo \texttt{type} del dataset.
-	\item \textbf{Refusal rate} en preguntas \texttt{unanswerable}.
-	\item \textbf{Tool calls promedio} por pregunta.
-	\item \textbf{Subqueries > 1} en \texttt{multi\_doc} y \texttt{comparative}.
-	\item \textbf{Deteccion de email action} sobre un dataset reducido de correos.
-	\item \textbf{Registro por pregunta} en JSON para analisis posterior.
-\end{itemize}
-
-Ejemplo de ejecucion comparativa:
-
-\begin{verbatim}
-python3 assistant/scripts/evaluate_orchestrator.py \
-  --questions data/evaluation/unir_questions.json \
-  --email-questions data/evaluation/email_questions.json \
-  --compare
-\end{verbatim}
-
-\subsection{Ajustes recientes del orquestador}
-Durante la fase de pruebas se introdujeron dos ajustes clave. En primer lugar, el orquestador delega las consultas \texttt{single\_doc} al flujo determinista, de forma que solo interviene cuando aporta valor (multi-doc, comparative, unanswerable y acciones). En segundo lugar, el chequeo de evidencia se relajo para permitir respuestas parciales cuando existe contexto recuperado, manteniendo la abstencion solo para preguntas de riesgo o no respondibles.
-
-\subsection{Resultados de calidad de respuesta}
-Se ejecutaron evaluaciones de calidad con \texttt{evaluate\_answers.py} para comparar el determinista y el orquestador sin reranking. La Tabla~\ref{tab:comparativa-respuestas} resume las metricas principales, junto con la tasa de deteccion de correos del orquestador (en el determinista es 0 por ausencia de plan e intencion).
+La Tabla~\ref{tab:resultados-calidad-respuesta} compara el comportamiento del flujo determinista y del orquestador en tres dimensiones: cobertura de hechos esperados, abstención ante preguntas no respondibles y detección de solicitudes de correo.
 
 \begin{table}[H]
 \centering
 \begin{tabular}{lcc}
 \toprule
-\textbf{Metrica} & \textbf{Determinista} & \textbf{Orquestador} \\
+\textbf{Métrica} & \textbf{A: Determinista} & \textbf{C: Orquestador} \\
 \midrule
-Expected facts coverage (answerable) & 0.438 & 0.312 \\
-Refusal rate (unanswerable) & 0.000 & 1.000 \\
-Email detection accuracy & 0.000 & 0.833 \\
+Cobertura de hechos esperados & 0.438 & 0.312 \\
+Tasa de abstención en preguntas no respondibles & 0.000 & 1.000 \\
+Exactitud en detección de intención de correo & 0.000 & 0.833 \\
 \bottomrule
 \end{tabular}
-\caption{Comparativa de calidad de respuesta (sin reranking) y deteccion de correos.}
-\label{tab:comparativa-respuestas}
+\caption{Comparativa de calidad de respuesta entre el flujo determinista y el orquestador.}
+\label{tab:resultados-calidad-respuesta}
 \end{table}
 
-Estos resultados reflejan que el orquestador mejora la abstencion en preguntas no respondibles y habilita la deteccion de acciones, mientras que la cobertura de \textit{expected facts} se ve penalizada por el estilo de respuesta y el criterio de emparejamiento, lo que se discutira en el analisis final.
+Los resultados muestran un comportamiento diferenciado entre ambas variantes. El flujo determinista obtiene una mayor cobertura de hechos esperados en preguntas respondibles, con un valor de 0.438 frente al 0.312 obtenido por el orquestador. Este resultado indica que, en esta configuración, el flujo determinista tiende a producir respuestas más alineadas con los hechos esperados definidos en el dataset.
 
-\section{Conclusiones y trabajo futuro}
-Esta seccion se completara tras implementar las variantes mejoradas y analizar los resultados comparativos.
+Sin embargo, el orquestador mejora de forma clara el comportamiento ante preguntas no respondibles. Mientras que el flujo determinista no se abstiene en este tipo de preguntas, el orquestador alcanza una tasa de abstención de 1.000. Este resultado es especialmente relevante en un asistente institucional, ya que responder sin evidencia suficiente puede producir información incorrecta o poco fiable.
+
+Además, el orquestador permite detectar solicitudes accionables, como la generación de borradores de correo. En esta dimensión alcanza una exactitud de 0.833, frente al 0.000 del flujo determinista, que no incorpora mecanismos de planificación ni activación de herramientas. Por tanto, aunque el orquestador no mejora la cobertura factual en esta evaluación, sí aporta capacidades relevantes de control, abstención y uso de herramientas.
+
+\section{Evaluación funcional del orquestador}\label{sec:evaluacion-funcional-orquestador}
+
+La evaluación del orquestador no se limita únicamente a métricas de respuesta, ya que su objetivo principal no es sustituir al recuperador, sino coordinar el flujo de ejecución del asistente. Por ello, se realizaron pruebas funcionales orientadas a comprobar si el sistema identifica correctamente el tipo de consulta y selecciona la acción adecuada.
+
+La Tabla~\ref{tab:validacion-funcional-orquestador} resume el comportamiento observado en consultas representativas de los principales escenarios contemplados.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Tipo de consulta} & \textbf{Comportamiento esperado} & \textbf{Resultado observado} \\
+\midrule
+\texttt{single\_doc} & Respuesta RAG directa & Correcto \\
+\texttt{multi\_doc} & Descomposición en subconsultas & Correcto \\
+\texttt{comparative} & Comparación estructurada por entidades & Correcto \\
+\texttt{unanswerable} & Abstención ante falta de evidencia & Correcto \\
+Solicitud de correo & Generación de borrador & Correcto \\
+\bottomrule
+\end{tabular}
+\caption{Validación funcional del comportamiento del orquestador.}
+\label{tab:validacion-funcional-orquestador}
+\end{table}
+
+Estos resultados muestran que el orquestador cumple su función principal como componente de control. En consultas simples, permite delegar la respuesta al flujo RAG directo. En consultas que requieren varios pasos, genera una planificación más estructurada. En preguntas comparativas, organiza la respuesta por entidades y diferencias principales. Finalmente, ante preguntas no respondibles o solicitudes accionables, activa comportamientos específicos que no están disponibles en el baseline determinista.
+
+\section{Discusión de resultados}\label{sec:discusion-resultados}
+
+Los resultados obtenidos permiten extraer varias conclusiones relevantes sobre el comportamiento del sistema.
+
+En primer lugar, la incorporación de recuperación híbrida y reranking mejora el rendimiento del sistema en las métricas de recuperación. La mejora en Hit@1 y MRR indica que la evidencia relevante aparece mejor posicionada, lo que resulta especialmente importante en sistemas RAG, donde la calidad de la generación depende directamente del contexto recuperado.
+
+En segundo lugar, el orquestador no mejora la cobertura de hechos esperados respecto al flujo determinista en la configuración evaluada. Este resultado puede explicarse por dos factores. Por un lado, el orquestador adopta un comportamiento más conservador, especialmente cuando la evidencia recuperada no es suficientemente clara. Por otro lado, la métrica de cobertura de hechos esperados depende de la coincidencia entre la respuesta generada y un conjunto concreto de hechos definidos previamente, por lo que puede penalizar respuestas correctas pero formuladas de manera más general o prudente.
+
+En tercer lugar, el orquestador sí aporta mejoras claras en dimensiones que no quedan reflejadas únicamente mediante métricas clásicas de recuperación. Su capacidad para abstenerse ante preguntas no respondibles reduce el riesgo de generar respuestas no fundamentadas. Asimismo, la detección de solicitudes de correo demuestra que la arquitectura puede extenderse hacia funcionalidades accionables, manteniendo un flujo controlado y trazable.
+
+En conjunto, los resultados sugieren que las mejoras sobre el recuperador tienen un impacto directo en la calidad de la evidencia recuperada, mientras que el orquestador aporta valor principalmente en términos de control del flujo, seguridad de la respuesta y extensibilidad funcional. Por tanto, ambas líneas de mejora son complementarias: el reranking contribuye a recuperar mejor información, mientras que el orquestador permite decidir cómo utilizarla.
+
+Por tanto, los resultados deben interpretarse desde la contribución global de la arquitectura: la mejora del retrieval incrementa la calidad de la evidencia disponible, mientras que la orquestación permite controlar cómo se utiliza dicha evidencia y cuándo debe activarse una capacidad accionable. La aportación principal no reside en un único componente aislado, sino en la integración modular y trazable de estos elementos dentro de un asistente institucional supervisado.
+
+\section{Limitaciones de la evaluación}\label{sec:limitaciones-evaluacion}
+
+La evaluación realizada presenta algunas limitaciones que deben tenerse en cuenta al interpretar los resultados. En primer lugar, el tamaño del corpus y del dataset es reducido, por lo que los valores obtenidos deben entenderse como una aproximación inicial al comportamiento del sistema y no como una medición definitiva.
+
+En segundo lugar, la evaluación de calidad de respuesta se basa en un subconjunto de preguntas con hechos esperados definidos manualmente. Este enfoque permite realizar una comparación semiautomatizada, pero puede penalizar respuestas que sean parcialmente correctas o que expresen la información con una formulación distinta a la esperada.
+
+En tercer lugar, el modelo generativo utilizado en la evaluación es ligero, lo que puede afectar a la calidad final de las respuestas. En consecuencia, parte de los errores observados pueden deberse no solo al diseño del pipeline RAG, sino también a las limitaciones del modelo de lenguaje empleado.
+
+Finalmente, la evaluación funcional del orquestador permite comprobar que los flujos principales se comportan como se esperaba, pero sería conveniente ampliarla en trabajos futuros con un conjunto mayor de consultas y métricas específicas de routing, planificación y uso de herramientas.
+
+\section{Síntesis de resultados}\label{sec:sintesis-resultados}
+
+A modo de síntesis, los experimentos realizados muestran que la variante con recuperación híbrida y reranking mejora los resultados de recuperación respecto al baseline determinista. Esta mejora se observa tanto en la presencia de la fuente correcta entre los primeros resultados como en su posición media dentro del ranking.
+
+Por otro lado, la comparación entre el flujo determinista y el orquestador muestra que el segundo no incrementa la cobertura de hechos esperados en esta configuración, pero sí mejora de forma notable la abstención ante preguntas no respondibles y permite incorporar capacidades accionables. Estos resultados respaldan la utilidad de una arquitectura modular, en la que las mejoras de recuperación y las capacidades de orquestación cumplen funciones distintas pero complementarias dentro del asistente institucional.

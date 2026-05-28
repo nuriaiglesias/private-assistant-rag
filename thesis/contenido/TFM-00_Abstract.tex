@@ -1,14 +1,26 @@
 \begin{abstract}[Resumen]
-\centering Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\par
-\par\vspace{0.25cm}
-\centering\textbf{Palabras clave: } \keywordsESv \par
+Este Trabajo de Fin de Máster presenta el diseño, implementación y evaluación de un asistente institucional basado en Retrieval-Augmented Generation (RAG) e integración de herramientas. La propuesta no se plantea como el desarrollo de un chatbot convencional, sino como una arquitectura modular, trazable y supervisada capaz de combinar recuperación documental, mejora del ranking de evidencias, orquestación del flujo de interacción y generación controlada de borradores de correo electrónico.
+
+El sistema se orienta a un contexto institucional universitario, donde la información relevante para el usuario puede encontrarse dispersa en páginas web, normativas, documentos administrativos y guías de procedimiento. Para abordar este escenario, se construye un corpus documental a partir de fuentes públicas, se normaliza su contenido, se segmenta en fragmentos recuperables y se indexa en una base documental preparada para búsquedas semánticas e híbridas. Sobre esta base, el asistente permite responder consultas en lenguaje natural utilizando evidencia recuperada y manteniendo trazabilidad sobre las fuentes empleadas.
+
+Desde el punto de vista experimental, el trabajo compara distintas variantes del sistema con el objetivo de analizar el impacto de los componentes incorporados. En primer lugar, se establece un baseline basado en recuperación semántica. Posteriormente, se evalúa una variante mejorada mediante recuperación híbrida y reranking, orientada a mejorar la posición de las evidencias relevantes. Finalmente, se analiza el papel del orquestador como mecanismo de control del flujo, abstención ante preguntas no respondibles y activación de herramientas accionables.
+
+Los resultados muestran que la recuperación híbrida con reranking mejora las métricas de recuperación respecto al baseline, especialmente en la posición de la fuente esperada dentro del ranking. Por su parte, el orquestador aporta valor principalmente en términos de control, trazabilidad, abstención ante ausencia de evidencia y generación supervisada de borradores de correo, aunque no siempre mejora la cobertura factual frente al flujo determinista. En conjunto, el trabajo demuestra la utilidad de una arquitectura modular para asistentes institucionales privados, donde la calidad de la recuperación y la supervisión del flujo cumplen funciones complementarias.
+
+\textbf{Palabras clave:} Modelos de lenguaje de gran tamaño, Retrieval-Augmented Generation, recuperación híbrida, reranking, orquestación, uso de herramientas, asistente institucional.
 \end{abstract}
 
 
 \pagebreak
 %Ingles
 \begin{abstract}
-Proin tincidunt enim nec fringilla euismod. Quisque id efficitur sapien. Sed hendrerit, nisl id efficitur elementum, arcu ex efficitur ipsum, sed auctor metus nibh id leo. Maecenas eu sem tortor. Etiam accumsan bibendum ante vitae auctor. Donec eget dolor gravida, tincidunt diam non, ornare orci. Pellentesque ornare blandit eros, sed maximus neque varius non.\par
-\par\vspace{0.25cm}
-\centering\textbf{Keywords: } \keywordsv \par
+This Master's Thesis presents the design, implementation and evaluation of an institutional assistant based on Retrieval-Augmented Generation (RAG) and tool integration. The proposal is not conceived as the development of a conventional chatbot, but as a modular, traceable and supervised architecture that combines document retrieval, evidence ranking improvement, interaction flow orchestration and controlled generation of email drafts.
+
+The system is designed for a university institutional context, where relevant information for users may be distributed across web pages, regulations, administrative documents and procedural guidelines. To address this scenario, a document corpus is built from public sources, normalized, divided into retrievable chunks and indexed in a document base prepared for semantic and hybrid search. On top of this base, the assistant answers natural language queries using retrieved evidence while preserving traceability over the sources used.
+
+From an experimental perspective, the work compares different system variants in order to analyse the impact of the incorporated components. First, a baseline based on semantic retrieval is established. Then, an improved variant based on hybrid retrieval and reranking is evaluated, with the aim of improving the position of relevant evidence in the ranking. Finally, the role of the orchestrator is analysed as a mechanism for flow control, abstention in unanswerable questions and activation of actionable tools.
+
+The results show that hybrid retrieval with reranking improves retrieval metrics compared to the baseline, especially regarding the position of the expected source in the ranking. The orchestrator, in turn, provides value mainly in terms of control, traceability, abstention when evidence is insufficient and supervised generation of email drafts, although it does not always improve factual coverage compared to the deterministic flow. Overall, the work demonstrates the usefulness of a modular architecture for private institutional assistants, where retrieval quality and flow supervision play complementary roles.
+
+\textbf{Keywords:} Large Language Models, Retrieval-Augmented Generation, hybrid retrieval, reranking, orchestration, tool use, institutional assistant.
 \end{abstract}

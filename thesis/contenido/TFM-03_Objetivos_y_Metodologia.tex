@@ -5,7 +5,10 @@ Posteriormente, se describirá la metodología adoptada para el desarrollo del p
 
 \section{Objetivos Generales}\label{sec:objgenerales}
 
+
 El objetivo general es desarrollar y evaluar un asistente institucional, capaz de consultar documentación interna mediante un sistema \textit{Retrieval-Augmented Generation} (RAG) y de apoyar acciones operativas mediante herramientas integradas, con el fin de mejorar su utilidad en un entorno controlado.
+
+De forma más específica, el trabajo busca validar una arquitectura en la que estas capacidades no se traten como módulos aislados, sino como partes coordinadas de un mismo flujo: recuperación de evidencia, mejora del ranking, generación de respuesta, decisión orquestada y acción supervisada.
 
 A mayores se persigue analizar en qué medida una mejora del componente de recuperación, basada en recuperación híbrida y \textit{reranking}, produce un efecto observable sobre la calidad de la evidencia recuperada y de las respuestas generadas, en comparación con un \textit{baseline} de recuperación semántica simple.
 
@@ -40,20 +43,22 @@ Para alcanzar el objetivo general, se plantean los siguientes objetivos específ
 Con el fin de que los objetivos anteriores puedan verificarse de forma objetiva, se emplearán los siguientes criterios de comprobación:
 
 \begin{itemize}
-    \item El conjunto de evaluación deberá contener al menos 25 casos de prueba representativos del dominio.
+    \item El conjunto de evaluación deberá contener al menos 25 casos de prueba representativos del dominio institucional, incluyendo preguntas respondibles y preguntas no respondibles a partir del corpus disponible.
     
-    \item El prototipo deberá ser capaz de generar una respuesta para, al menos, el 90\% de los casos de prueba definidos.
+    \item El corpus documental deberá estar formado por documentos públicos del dominio institucional, procesados y segmentados en fragmentos adecuados para su recuperación posterior.
     
-    \item En los casos orientados a acción, el sistema deberá generar correos para, al menos, el 90\% de las consultas correspondientes.
+    \item La comparación entre el \textit{baseline} y la variante mejorada se realizará mediante métricas de recuperación como Hit@1, Hit@3 y MRR.
     
-    \item La comparación entre el \textit{baseline} y la variante mejorada se realizará mediante métricas de recuperación como Recall@5 y MRR@5.
+    \item Se considerará que la mejora del componente de recuperación produce un efecto observable si la variante mejorada obtiene, al menos, una mejora de 3 puntos porcentuales en Hit@1 o Hit@3, o una mejora relativa del 5\% en MRR respecto al \textit{baseline}. 
+    En este contexto, Hit@1 indica si la fuente esperada aparece en la primera posición, Hit@3 indica si aparece entre los tres primeros resultados y MRR mide la posición media recíproca de la primera fuente relevante recuperada.
     
-    \item Se considerará que la mejora propuesta produce un efecto observable si la variante mejorada obtiene, al menos, una mejora de 3 puntos porcentuales en Recall@5 o una mejora relativa del 5\% en MRR@5 respecto al \textit{baseline}. 
-    En ambos casos, el valor @5 indica que la evaluación se realiza sobre los cinco primeros documentos recuperados por el sistema para cada consulta.
+    \item La calidad de las respuestas generadas se analizará mediante la cobertura de hechos esperados en las preguntas respondibles, comparando el comportamiento del flujo determinista y del orquestador.
     
-    \item Se considerará satisfactorio que al menos el 75\% de las respuestas generadas por la variante mejorada se apoyen de forma clara en los documentos recuperados.
-        
-    \item El coste temporal del sistema se medirá mediante la latencia media por consulta, procurando que la variante mejorada no incremente dicho tiempo en más de un 50\% respecto al \textit{baseline}.
+    \item En las preguntas no respondibles, se evaluará la capacidad del sistema para abstenerse de responder cuando no exista evidencia suficiente en el corpus documental.
+    
+    \item En los casos orientados a acción, se evaluará la capacidad del orquestador para detectar la intención de generación de correo y producir un borrador adecuado, sin realizar el envío real del mensaje.
+    
+    \item La evaluación funcional del orquestador comprobará si el sistema selecciona el flujo adecuado en consultas simples, consultas multi-documento, preguntas comparativas, preguntas no respondibles y solicitudes de generación de borradores.
 \end{itemize}
 
 \section{Metodología del trabajo}\label{sec:metodologia}
@@ -160,7 +165,7 @@ Durante esta fase también se seleccionarán las herramientas y tecnologías nec
 
 \subsection{Sprint 2: diseño de la arquitectura y preparación del entorno de trabajo}
 
-El primer sprint estará centrado en el diseño técnico del sistema. En esta etapa se definirá la arquitectura modular del asistente, identificando los componentes principales, sus responsabilidades y el flujo de interacción entre ellos. 
+El segundo sprint estará centrado en el diseño técnico del sistema. En esta etapa se definirá la arquitectura modular del asistente, identificando los componentes principales, sus responsabilidades y el flujo de interacción entre ellos. 
 En particular, se detallará el papel del agente orquestador, el componente de recuperación documental, el modelo generativo y la funcionalidad de herramienta integrada.
 
 Además, se preparará el entorno de desarrollo, se seleccionará o estructurará el corpus documental inicial y se organizará el material necesario para la construcción posterior del prototipo.
@@ -183,7 +188,7 @@ Al finalizar este sprint, el prototipo deberá ser capaz de producir una salida 
 
 \subsection{Sprint 5: implementación de la mejora del componente de recuperación de información}
 
-El cuarto sprint estará orientado a la principal aportación experimental del TFM. 
+El quinto sprint estará orientado a la principal aportación experimental del TFM. 
 En esta etapa se implementará una variante mejorada del componente de recuperación de información basada en recuperación híbrida y \textit{reranking}, manteniendo la posibilidad de compararla con el \textit{baseline} definido anteriormente.
 El objetivo será introducir una mejora concreta y controlada sobre el proceso de recuperación documental, sin modificar de forma radical el resto del sistema. 
 

@@ -6,7 +6,7 @@ This folder is reserved for technical implementation.
 
 - `app/` API and core application logic.
 - `rag/` ingestion, chunking, retrieval, and reranking.
-- `prompts/` system prompts and templates.
+- `prompts/` system prompts and templates (RAG prompts live in `prompts/rag`).
 - `eval/` baseline and comparison evaluation scripts.
 - `tests/` unit and integration tests.
 - `data/` test documents and evaluation datasets.
@@ -44,13 +44,13 @@ pip install -r requirements-llm.txt
 Run ingestion:
 
 ```bash
-python3 scripts/ingest_documents.py
+python3 scripts/ingest/ingest_documents.py
 ```
 
 If you run scripts from the repository root, set the module path:
 
 ```bash
-PYTHONPATH=assistant/src python3 assistant/scripts/ingest_documents.py
+PYTHONPATH=assistant/src python3 assistant/scripts/ingest/ingest_documents.py
 ```
 
 If you prefer `python`, install the shim:

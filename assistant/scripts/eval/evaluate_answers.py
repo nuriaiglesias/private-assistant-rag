@@ -7,7 +7,7 @@ import sys
 import unicodedata
 from typing import Dict, List, Set
 
-SRC_ROOT = Path(__file__).resolve().parents[1] / "src"
+SRC_ROOT = Path(__file__).resolve().parents[2] / "src"
 if str(SRC_ROOT) not in sys.path:
 	sys.path.insert(0, str(SRC_ROOT))
 
@@ -95,7 +95,7 @@ def main() -> None:
 	parser = argparse.ArgumentParser(description="Evaluate RAG answers with expected_facts")
 	parser.add_argument(
 		"--questions",
-		default="data/evaluation/unir_questions.json",
+		default="data/evaluation/datasets/unir_questions.json",
 		help="Path to unir_questions.json",
 	)
 	parser.add_argument("--top-k", type=int, default=5, help="Number of chunks to retrieve")

@@ -8,7 +8,7 @@ from typing import List
 
 from sentence_transformers import SentenceTransformer
 
-SRC_ROOT = Path(__file__).resolve().parents[1] / "src"
+SRC_ROOT = Path(__file__).resolve().parents[2] / "src"
 if str(SRC_ROOT) not in sys.path:
 	sys.path.insert(0, str(SRC_ROOT))
 
@@ -56,7 +56,7 @@ def main() -> None:
 	args = parser.parse_args()
 
 	config = load_config()
-	repo_root = Path(__file__).resolve().parents[1]
+	repo_root = Path(__file__).resolve().parents[2]
 	input_path = Path(args.input)
 	data_root = input_path if input_path.is_absolute() else repo_root / input_path
 	data_root = data_root.resolve()

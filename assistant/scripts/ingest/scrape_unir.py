@@ -23,7 +23,7 @@ class SeedUrl:
 	source_name: str
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = REPO_ROOT / "data" / "processed" / "markdown" / "unir"
 RAW_DIR = REPO_ROOT / "data" / "raw" / "unir_html"
 DEFAULT_SEEDS_PATH = REPO_ROOT / "data" / "unir_seeds.jsonl"

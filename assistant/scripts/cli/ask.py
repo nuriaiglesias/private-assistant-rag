@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 import sys
 
-SRC_ROOT = Path(__file__).resolve().parents[1] / "src"
+SRC_ROOT = Path(__file__).resolve().parents[2] / "src"
 if str(SRC_ROOT) not in sys.path:
 	sys.path.insert(0, str(SRC_ROOT))
 
@@ -17,16 +17,16 @@ def main() -> None:
 Variant mapping examples:
 
 # A: Baseline RAG
-python scripts/ask.py "question"
+python scripts/cli/ask.py "question"
 
 # B: RAG + reranking
-python scripts/ask.py "question" --use-reranking
+python scripts/cli/ask.py "question" --use-reranking
 
 # C: RAG + orchestrator
-python scripts/ask.py "question" --use-orchestrator
+python scripts/cli/ask.py "question" --use-orchestrator
 
 # D: RAG + reranking + orchestrator
-python scripts/ask.py "question" --use-reranking --use-orchestrator
+python scripts/cli/ask.py "question" --use-reranking --use-orchestrator
 """
 	parser = argparse.ArgumentParser(
 		description="Ask a question to the RAG pipeline",

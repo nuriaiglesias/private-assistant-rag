@@ -7,7 +7,7 @@ import sys
 from typing import List
 from urllib.parse import urlparse
 
-SRC_ROOT = Path(__file__).resolve().parents[1] / "src"
+SRC_ROOT = Path(__file__).resolve().parents[2] / "src"
 if str(SRC_ROOT) not in sys.path:
 	sys.path.insert(0, str(SRC_ROOT))
 
@@ -35,7 +35,7 @@ def main() -> None:
 	parser = argparse.ArgumentParser(description="Evaluate retrieval with Hit@K and MRR")
 	parser.add_argument(
 		"--questions",
-		default="data/evaluation/questions.json",
+		default="data/evaluation/datasets/questions.json",
 		help="Path to questions.json",
 	)
 	parser.add_argument("--top-k", type=int, default=5, help="Max results to retrieve")

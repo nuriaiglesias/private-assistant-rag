@@ -175,11 +175,11 @@ class RagPipeline:
 	) -> tuple[str, dict[str, int]]:
 		context = self._format_context(sources)
 		system_prompt = self._read_prompt("system_base.txt")
-		prompt_name = "rag_answer.txt"
+		prompt_name = "rag/rag_answer.txt"
 		if answer_style == "comparison":
-			prompt_name = "rag_answer_comparison.txt"
+			prompt_name = "rag/rag_answer_comparison.txt"
 		elif answer_style == "structured":
-			prompt_name = "rag_answer_multidoc.txt"
+			prompt_name = "rag/rag_answer_multidoc.txt"
 		user_prompt = self._read_prompt(prompt_name).format(
 			question=question,
 			context=context,
