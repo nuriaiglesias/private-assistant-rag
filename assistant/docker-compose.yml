@@ -2,6 +2,7 @@ services:
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant
+    restart: unless-stopped
     ports:
       - "6333:6333"
     volumes:
@@ -9,6 +10,7 @@ services:
   phoenix:
     image: arizephoenix/phoenix:latest
     container_name: phoenix
+    restart: unless-stopped
     ports:
       - "6006:6006"
       - "4317:4317"

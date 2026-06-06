@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+"""Observability helpers for initializing OpenTelemetry tracing with Phoenix."""
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -14,17 +14,18 @@ _CONFIGURED = False
 
 
 def configure_tracer(config: AppConfig) -> trace.Tracer:
-	global _CONFIGURED
-	if not config.phoenix_enabled:
-		return trace.get_tracer("assistant.rag")
+    """Configure and return an OpenTelemetry tracer if Phoenix is enabled."""
+    global _CONFIGURED
+    if not config.phoenix_enabled:
+        return trace.get_tracer("assistant.rag")
 
-	if not _CONFIGURED:
-		endpoint = f"http://{config.phoenix_host}:{config.phoenix_port}"
-		resource = Resource.create({"service.name": config.phoenix_project})
-		provider = TracerProvider(resource=resource)
-		exporter = OTLPSpanExporter(endpoint=endpoint, insecure=True)
-		provider.add_span_processor(BatchSpanProcessor(exporter))
-		trace.set_tracer_provider(provider)
-		_CONFIGURED = True
+    if not _CONFIGURED:
+        endpoint = f"http://{config.phoenix_host}:{config.phoenix_port}"
+        resource = Resource.create({"service.name": config.phoenix_project})
+        provider = TracerProvider(resource=resource)
+        exporter = OTLPSpanExporter(endpoint=endpoint, insecure=True)
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+        trace.set_tracer_provider(provider)
+        _CONFIGURED = True
 
-	return trace.get_tracer("assistant.rag")
+    return trace.get_tracer("assistant.rag")

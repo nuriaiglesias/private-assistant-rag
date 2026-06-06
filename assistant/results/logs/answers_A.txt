@@ -1,0 +1,171 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights: 100%|██████████| 391/391 [00:00<00:00, 5537.08it/s]
+Loading weights:   0%|          | 0/105 [00:00<?, ?it/s]Loading weights:  47%|████▋     | 49/105 [00:00<00:00, 452.02it/s]Loading weights:  90%|█████████ | 95/105 [00:00<00:00, 445.22it/s]Loading weights: 100%|██████████| 105/105 [00:00<00:00, 476.48it/s]
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Setting attribute on ended span.
+Expected facts coverage (answerable only): 0.300
+Questions with expected_facts: 61
+Refusal rate (unanswerable): 0.000
+Unanswerable questions: 10
+
+By type
+- comparative: 0.192 (n=10)
+- multi_doc: 0.256 (n=15)
+- single_doc: 0.349 (n=36)
+- unanswerable: 0.000 (n=10)
+
+By category
+- admisiones: 0.315 (n=14)
+- becas: 0.333 (n=3)
+- biblioteca: 0.333 (n=1)
+- calidad: 0.361 (n=3)
+- doctorado: 0.333 (n=1)
+- empleabilidad: 0.146 (n=8)
+- facultades: 0.232 (n=10)
+- matricula: 0.133 (n=3)
+- metodologia: 0.139 (n=6)
+- movilidad: 0.167 (n=5)
+- normativa: 0.333 (n=1)
+- overview: 0.667 (n=1)
+- servicios: 0.321 (n=12)
+- titulaciones: 0.250 (n=3)

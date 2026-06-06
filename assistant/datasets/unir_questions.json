@@ -1,0 +1,998 @@
+[
+  {
+    "question": "Que requisitos de acceso se piden para estudiar en UNIR?",
+    "type": "single_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "requisitos-acceso"
+    ],
+    "expected_facts": [
+      "Los requisitos dependen del tipo de estudio (grado, postgrado o titulo propio)",
+      "Para grado se puede acceder desde Bachillerato/PAU, FP de Grado Superior, prueba de mayores de 25/40/45 anos o titulo universitario",
+      "Para postgrado oficial se necesita un titulo universitario oficial espanol o equivalente del EEES",
+      "Los titulos propios generalmente no exigen condiciones oficiales especificas de acceso"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que es el reconocimiento de creditos y donde puedo consultar esa informacion?",
+    "type": "single_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "reconocimiento-creditos"
+    ],
+    "expected_facts": [
+      "Permite reducir el tiempo de obtencion del titulo reconociendo estudios previos",
+      "Se pueden reconocer estudios universitarios oficiales, ciclos de grado superior y experiencia profesional",
+      "El estudio previo de reconocimiento es gratuito",
+      "El plazo de solicitud es hasta 10 dias antes de la matriculacion",
+      "La tasa de reconocimiento definitivo de creditos de otra universidad es de 12 euros por ECTS"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Cuales son los pasos para matricularse en UNIR?",
+    "type": "single_doc",
+    "category": "matricula",
+    "expected_sources": [
+      "como-matricularse"
+    ],
+    "expected_facts": [
+      "Hay que completar el formulario de solicitud de informacion",
+      "Un asesor personal llama para verificar requisitos y elaborar un plan de estudios personalizado",
+      "El asesor facilita el formulario de matricula con las opciones de pago",
+      "Hay que enviar la documentacion compulsada para formalizar la admision",
+      "El acceso al Campus Virtual se habilita una vez abierta la convocatoria"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que becas y ayudas economicas ofrece UNIR?",
+    "type": "single_doc",
+    "category": "becas",
+    "expected_sources": [
+      "becas-universitarias-y-precios"
+    ],
+    "expected_facts": [
+      "UNIR ofrece descuentos, ayudas y becas propias",
+      "Existen acuerdos con instituciones de fomento educativo y organismos oficiales",
+      "Es posible financiar los estudios comodamente o aprovechar descuentos por pronto pago",
+      "La matricula incluye formacion, profesores, tutor personal, Campus Virtual y materiales",
+      "No existe ningun coste de inscripcion adicional a la matricula"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que tipo de informacion puedo encontrar en las preguntas frecuentes de UNIR?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "preguntas-frecuentes"
+    ],
+    "expected_facts": [
+      "Incluye respuestas sobre requisitos de acceso a grados",
+      "Cubre informacion sobre reconocimientos y convalidaciones",
+      "Recoge dudas habituales de estudiantes sobre tramites academicos"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que recoge la normativa universitaria de UNIR?",
+    "type": "single_doc",
+    "category": "normativa",
+    "expected_sources": [
+      "normativa"
+    ],
+    "expected_facts": [
+      "Recoge las reglas y procedimientos que rigen la actividad academica y administrativa de UNIR",
+      "El Servicio de Solicitudes gestiona peticiones que no estan recogidas en la normativa",
+      "La normativa es de caracter publico y consultable en la web de la universidad"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que es el Sistema de Calidad de UNIR?",
+    "type": "single_doc",
+    "category": "calidad",
+    "expected_sources": [
+      "sistema-calidad"
+    ],
+    "expected_facts": [
+      "El sistema se ajusta a las normas del programa AUDIT de ANECA",
+      "Su objetivo es ofrecer docencia de calidad con vocacion de mejora continua",
+      "Se organiza en dos niveles: Unidad de Calidad (UNICA) y Unidades de Calidad de Titulacion (UCT)",
+      "Cuenta con un Manual de Calidad y procedimientos interrelacionados"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Donde estan los centros de examenes de UNIR?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "centros-examenes"
+    ],
+    "expected_facts": [
+      "Los examenes pueden realizarse en linea o de forma presencial",
+      "Las sedes nacionales fijas son Barcelona, Logroño, Madrid, Sevilla y Valencia",
+      "Existen sedes internacionales fijas en Bogota, Quito y Ciudad de Mexico",
+      "Hay sedes de apertura excepcional que UNIR puede habilitar segun la convocatoria"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Para que sirve el Servicio de Solicitudes de UNIR?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "servicio-solicitudes"
+    ],
+    "expected_facts": [
+      "Gestiona peticiones extraordinarias de estudiantes que no estan recogidas en la normativa",
+      "Atiende solicitudes, reclamaciones y sugerencias con soluciones individuales y excepcionales",
+      "Forma parte de los Servicios Transversales de UNIR junto con el SANNEE y el SOA",
+      "El correo de contacto es solicitud@unir.net"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que opciones de movilidad ofrece UNIR a sus estudiantes?",
+    "type": "single_doc",
+    "category": "movilidad",
+    "expected_sources": [
+      "oficina-movilidad"
+    ],
+    "expected_facts": [
+      "La Oficina de Movilidad Internacional (OMI) gestiona las relaciones con instituciones internacionales",
+      "UNIR forma parte del programa Erasmus+",
+      "El programa Erasmus+ permite estudiar, realizar practicas y participar en voluntariado en 28 paises de la UE",
+      "Existen convocatorias de becas propias para movilidad Erasmus+"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Existe una bolsa de empleo para estudiantes en UNIR?",
+    "type": "single_doc",
+    "category": "empleabilidad",
+    "expected_sources": [
+      "bolsa-de-empleo-coie"
+    ],
+    "expected_facts": [
+      "El COIE (Centro de Orientacion e Informacion para el Empleo) gestiona la bolsa de empleo",
+      "El Portal de Empleo cuenta con mas de 2.200 empresas registradas",
+      "Se gestionan practicas curriculares y extracurriculares en mas de 1.500 empresas",
+      "El acceso a la bolsa de empleo es gratuito para estudiantes de UNIR"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que es UNIR Alumni?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "uniralumni"
+    ],
+    "expected_facts": [
+      "Es la comunidad de egresados de UNIR",
+      "Ofrece acceso a ferias virtuales de empleo y networking",
+      "Permite acceder a becas formativas para el propio egresado y sus familiares",
+      "Los egresados de UNIR tienen un descuento del 5% en nuevas matriculas"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que recursos hay para estudiantes con necesidades especiales en UNIR?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "atencion-necesidades-especiales"
+    ],
+    "expected_facts": [
+      "El SANNEE presta apoyo a estudiantes en situacion de diversidad funcional temporal o permanente",
+      "Los servicios incluyen adaptaciones curriculares y adaptaciones en los examenes",
+      "El correo de contacto es necesidadesespeciales@unir.net",
+      "El telefono de contacto es 941 210 211"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Como se estudia online en UNIR?",
+    "type": "single_doc",
+    "category": "metodologia",
+    "expected_sources": [
+      "como-estudiar-online"
+    ],
+    "expected_facts": [
+      "La metodologia es flexible, personalizada y eficaz",
+      "Se basa en clases online en directo y el acompañamiento de un mentor personal",
+      "Las clases se imparten en turno de mañana y tarde y quedan grabadas en el Campus Virtual",
+      "Cada estudiante recibe un mentor personal desde el primer dia"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Como es el Campus Virtual de UNIR?",
+    "type": "single_doc",
+    "category": "metodologia",
+    "expected_sources": [
+      "conoce-el-campus"
+    ],
+    "expected_facts": [
+      "Es accesible desde ordenador, movil o cualquier dispositivo con conexion a Internet",
+      "Incluye aulas virtuales con clases en directo y en diferido, foros, chats y tablones",
+      "Dispone de una agenda para visualizar actividades, examenes y tareas",
+      "Permite acceder a la Biblioteca digital y descargar recursos educativos"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Cuales son las sedes fijas nacionales de examenes presenciales de UNIR?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "centros-examenes"
+    ],
+    "expected_facts": [
+      "Las cinco sedes nacionales fijas son Barcelona, Logroño, Madrid, Sevilla y Valencia",
+      "Los examenes presenciales se realizan en salas generalmente de hoteles",
+      "Los horarios se ajustan para compatibilizarlos con la vida laboral"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que programas ofrece el COIE de UNIR para mejorar la empleabilidad?",
+    "type": "single_doc",
+    "category": "empleabilidad",
+    "expected_sources": [
+      "bolsa-de-empleo-coie"
+    ],
+    "expected_facts": [
+      "Ofrece el Certificado en Competencias Emprendedoras",
+      "Ofrece el Certificado en Desarrollo Profesional con formacion en IA y habilidades demandadas",
+      "Organiza Job Trainings con empresas tecnologicas e innovadoras",
+      "Organiza la Feria Virtual de Empleo de UNIR"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que beneficios exclusivos tiene pertenecer a UNIRalumni?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "uniralumni"
+    ],
+    "expected_facts": [
+      "Acceso a Becas UNIRalumni para continuar la formacion",
+      "Becas UNIR con los tuyos para familiares y amigos",
+      "Acceso a certificaciones profesionales y descuentos en actividades culturales",
+      "Posibilidad de participar en clases magistrales y grupos de investigacion de UNIR",
+      "Posibilidad de obtener la orla de graduacion"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Cuales son las tasas del reconocimiento de creditos en UNIR?",
+    "type": "single_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "reconocimiento-creditos"
+    ],
+    "expected_facts": [
+      "El estudio de reconocimiento previo no tiene coste",
+      "El reconocimiento definitivo de creditos de otra universidad cuesta 12 euros por ECTS",
+      "El reconocimiento de creditos de asignaturas cursadas en UNIR cuesta 6 euros por ECTS",
+      "Para masteres el reconocimiento de transferencia no tiene coste adicional"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que es el Servicio de Orientacion Academica de UNIR?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "orientacion-academica"
+    ],
+    "expected_facts": [
+      "El SOA implementa estrategias y herramientas de aprendizaje dentro del Campus Virtual",
+      "Presta apoyo a estudiantes con dificultades especificas de aprendizaje junto con el SANNEE",
+      "Se puede contactar por correo en soa@unir.net o al telefono 941 210 211"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Cuantas titulaciones tiene la Facultad de Educacion de UNIR?",
+    "type": "single_doc",
+    "category": "facultades",
+    "expected_sources": [
+      "facultad-educacion"
+    ],
+    "expected_facts": [
+      "La facultad ofrece 17 titulaciones de grado",
+      "Ofrece al menos 36 masteres oficiales",
+      "Incluye titulaciones como el Grado en Maestro en Educacion Infantil y el Grado en Pedagogia",
+      "Cuenta con menciones especializadas como Audicion y Lenguaje o Educacion Fisica"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que grados ofrece la Escuela Superior de Ingenieria y Tecnologia de UNIR?",
+    "type": "single_doc",
+    "category": "facultades",
+    "expected_sources": [
+      "esit"
+    ],
+    "expected_facts": [
+      "La ESIT ofrece 9 titulaciones de grado",
+      "Incluye Grado en Ciberseguridad, Grado en Ciencia de Datos y Grado en Ingenieria Informatica",
+      "Tambien oferta Grado en Diseño Digital, Grado en Fisica y Grado en Matematica Computacional"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que doctorados ofrece la Escuela de Doctorado de UNIR?",
+    "type": "single_doc",
+    "category": "titulaciones",
+    "expected_sources": [
+      "escuela-doctorado"
+    ],
+    "expected_facts": [
+      "Programa de Doctorado en Sociedad del Conocimiento y Accion en los Ambitos de la Educacion, la Comunicacion, los Derechos y las Nuevas Tecnologias",
+      "Programa de Doctorado en Ciencias de la Computacion",
+      "Programa de Doctorado en Humanidades y Sociedad Digital",
+      "Programa de Doctorado en Economia y Empresa"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que becas ofrece la Escuela de Doctorado de UNIR?",
+    "type": "single_doc",
+    "category": "becas",
+    "expected_sources": [
+      "escuela-doctorado"
+    ],
+    "expected_facts": [
+      "Existen contratos predoctorales para formacion de personal investigador",
+      "Hay becas asociadas a los Grupos de Investigacion",
+      "Existen becas para estudios con mencion industrial",
+      "Los egresados de UNIR tienen un descuento del 5% en el doctorado"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que pasos sigue el proceso de solicitud de movilidad Erasmus en UNIR?",
+    "type": "single_doc",
+    "category": "movilidad",
+    "expected_sources": [
+      "oficina-movilidad"
+    ],
+    "expected_facts": [
+      "La OMI gestiona todas las relaciones con instituciones internacionales y tramita las solicitudes",
+      "La solicitud debe presentarse mediante los documentos disponibles en la convocatoria de movilidad",
+      "UNIR cuenta con la Carta Erasmus de Educacion Superior (ECHE) y el Erasmus Policy Statement (EPS)",
+      "Existe apoyo linguistico en linea gratuito para participantes en Erasmus+"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que menciones tiene el Grado en Maestro en Educacion Primaria de UNIR?",
+    "type": "single_doc",
+    "category": "facultades",
+    "expected_sources": [
+      "facultad-educacion"
+    ],
+    "expected_facts": [
+      "Existe mencion en Audicion y Lenguaje",
+      "Existe mencion en Educacion Fisica",
+      "Existe mencion en Educacion Musical",
+      "Existe mencion en Ensenanza de la Lengua Inglesa",
+      "Existe mencion en Pedagogia Terapeutica (Educacion Especial)"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Como puede contactar un estudiante con el Servicio de Solicitudes de UNIR?",
+    "type": "single_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "servicio-solicitudes"
+    ],
+    "expected_facts": [
+      "El correo de contacto es solicitud@unir.net",
+      "El telefono de contacto es 941 210 211"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que recursos de aprendizaje ofrece el Campus Virtual de UNIR para cada asignatura?",
+    "type": "single_doc",
+    "category": "metodologia",
+    "expected_sources": [
+      "conoce-el-campus"
+    ],
+    "expected_facts": [
+      "Cada tema incluye ideas clave con esquemas y resumenes",
+      "Hay materiales de lo mas recomendado como clases magistrales y lecturas",
+      "Se incluyen actividades para poner en practica lo aprendido",
+      "Existen tests de autoevaluacion para repasar antes del examen"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que es la Feria Virtual de Empleo de UNIR?",
+    "type": "single_doc",
+    "category": "empleabilidad",
+    "expected_sources": [
+      "bolsa-de-empleo-coie"
+    ],
+    "expected_facts": [
+      "Es el evento universitario de referencia sobre empleabilidad online de UNIR",
+      "Permite encontrar ofertas de empleo y hacer networking",
+      "Esta organizada por el COIE de UNIR"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que requisitos de acceso existen para los titulos propios de UNIR?",
+    "type": "single_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "requisitos-acceso"
+    ],
+    "expected_facts": [
+      "Los titulos propios generalmente no exigen condiciones oficiales especificas de acceso",
+      "Segun el area de conocimiento puede recomendarse un perfil determinado",
+      "En algunos casos se establecen criterios particulares consultables en la ficha de la titulacion"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Cuantos estudiantes y egresados tiene UNIR?",
+    "type": "single_doc",
+    "category": "overview",
+    "expected_sources": [
+      "estudia-con-nosotros"
+    ],
+    "expected_facts": [
+      "UNIR cuenta con mas de 70.000 egresados",
+      "Tiene mas de 40.000 estudiantes en activo",
+      "Ofrece mas de 190 titulaciones"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que vias de acceso a la universidad existen para mayores de 25 anos?",
+    "type": "single_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "requisitos-acceso"
+    ],
+    "expected_facts": [
+      "Es posible acceder a traves de la prueba de mayores de 25 anos",
+      "Tambien existe la prueba de mayores de 40 anos",
+      "Y la prueba de mayores de 45 anos",
+      "Los mayores de 40 anos pueden acceder tambien mediante acreditacion de experiencia profesional"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que grados ofrece la Facultad de Derecho de UNIR?",
+    "type": "single_doc",
+    "category": "facultades",
+    "expected_sources": [
+      "facultad-derecho"
+    ],
+    "expected_facts": [
+      "La Facultad de Derecho ofrece 9 titulaciones de grado",
+      "Incluye el Grado en Derecho, el Grado en Criminologia y el Grado en Relaciones Internacionales",
+      "Ofrece dobles grados como Derecho y ADE, Derecho y Criminologia, y Derecho y Ciencias Politicas"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Cuantos masteres tiene la ESIT de UNIR?",
+    "type": "single_doc",
+    "category": "facultades",
+    "expected_sources": [
+      "esit"
+    ],
+    "expected_facts": [
+      "La ESIT ofrece al menos 34 masteres oficiales",
+      "Incluye masteres en Ciberseguridad, Big Data, Computacion Cuantica y DevOps"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que es el programa de apoyo linguistico de UNIR para estudiantes Erasmus?",
+    "type": "single_doc",
+    "category": "movilidad",
+    "expected_sources": [
+      "oficina-movilidad"
+    ],
+    "expected_facts": [
+      "Es un servicio de la Comision Europea para mejorar el nivel de idiomas",
+      "Esta disponible para participantes en el Programa Erasmus+ que vayan a estudiar o trabajar en el extranjero",
+      "El servicio es gratuito"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que plazos existen para solicitar y entregar la documentacion de reconocimiento de creditos?",
+    "type": "single_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "reconocimiento-creditos"
+    ],
+    "expected_facts": [
+      "El reconocimiento debe solicitarse hasta 10 dias antes de la matriculacion",
+      "El estudio previo se recibe en un plazo maximo de 15 dias desde la solicitud",
+      "La documentacion debe enviarse en un plazo de 1 mes desde la matriculacion",
+      "El pago de los creditos reconocidos debe realizarse en un plazo de 90 dias"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que pasos debo seguir para matricularme y donde ver los requisitos de acceso?",
+    "type": "multi_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "como-matricularse",
+      "requisitos-acceso"
+    ],
+    "expected_facts": [
+      "El proceso de matricula comienza con el formulario de solicitud de informacion",
+      "Para grado se necesita PAU, FP de Grado Superior u otras vias reconocidas",
+      "Para postgrado oficial se necesita un titulo universitario oficial",
+      "Un asesor personal guia el proceso de matricula"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que informacion ofrece la Biblioteca Virtual de UNIR y sus preguntas frecuentes?",
+    "type": "multi_doc",
+    "category": "biblioteca",
+    "expected_sources": [
+      "recursosbiblioteca.unir.net",
+      "preguntas-frecuentes"
+    ],
+    "expected_facts": [
+      "La Biblioteca Virtual forma parte del Campus Virtual",
+      "Permite acceder a libros digitales, articulos y otros recursos academicos",
+      "Las preguntas frecuentes cubren dudas habituales sobre tramites academicos y servicios"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que informacion ofrece UNIR sobre su modelo de universidad online y su sistema de calidad?",
+    "type": "multi_doc",
+    "category": "calidad",
+    "expected_sources": [
+      "universidad-online",
+      "sistema-calidad"
+    ],
+    "expected_facts": [
+      "UNIR es una universidad online con metodologia flexible y clases en directo",
+      "El Sistema de Calidad sigue el programa AUDIT de ANECA",
+      "La estructura del SAIC se organiza en UNICA y Unidades de Calidad de Titulacion"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que recursos hay para movilidad y donde estan los centros de examenes de UNIR?",
+    "type": "multi_doc",
+    "category": "movilidad",
+    "expected_sources": [
+      "oficina-movilidad",
+      "centros-examenes"
+    ],
+    "expected_facts": [
+      "La OMI gestiona el programa Erasmus+ y otros programas de movilidad",
+      "Los examenes pueden realizarse online o en sedes presenciales",
+      "Existen sedes en España y en paises de Latinoamerica"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que servicios cubren la orientacion academica y el servicio de solicitudes de UNIR?",
+    "type": "multi_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "orientacion-academica",
+      "servicio-solicitudes"
+    ],
+    "expected_facts": [
+      "El SOA implementa estrategias y herramientas de aprendizaje en el Campus Virtual",
+      "El Servicio de Solicitudes gestiona peticiones extraordinarias no cubiertas por la normativa",
+      "Ambos forman parte de los Servicios Transversales de UNIR junto con el SANNEE"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que informacion general aporta la pagina de Estudiar en UNIR y que tipo de dudas cubren las preguntas frecuentes?",
+    "type": "multi_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "estudia-con-nosotros",
+      "preguntas-frecuentes"
+    ],
+    "expected_facts": [
+      "La pagina de Estudiar en UNIR informa sobre metodologia, titulaciones, becas y requisitos de acceso",
+      "Las preguntas frecuentes resuelven dudas concretas sobre tramites academicos y acceso",
+      "UNIR tiene mas de 70.000 egresados y mas de 40.000 estudiantes activos"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que diferencias de coste existen entre reconocer creditos de otra universidad y reconocer creditos cursados en UNIR, y como puedo pagar la matricula en general?",
+    "type": "multi_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "reconocimiento-creditos",
+      "becas-universitarias-y-precios"
+    ],
+    "expected_facts": [
+      "Reconocer creditos de otra universidad cuesta 12 euros por ECTS",
+      "Reconocer creditos cursados en UNIR cuesta 6 euros por ECTS",
+      "La matricula puede financiarse comodamente o aprovechar descuentos por pronto pago"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que servicios complementarios tiene UNIR para el apoyo al estudiante mas alla de las clases?",
+    "type": "multi_doc",
+    "category": "servicios",
+    "expected_sources": [
+      "orientacion-academica",
+      "atencion-necesidades-especiales",
+      "servicio-solicitudes"
+    ],
+    "expected_facts": [
+      "El SOA ofrece estrategias y herramientas de aprendizaje personalizadas",
+      "El SANNEE atiende a estudiantes con diversidad funcional y ofrece adaptaciones curriculares y de examenes",
+      "El Servicio de Solicitudes resuelve peticiones extraordinarias no cubiertas por la normativa",
+      "Los tres servicios forman los Servicios Transversales de UNIR"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Como puede un estudiante compatibilizar los examenes de UNIR con la vida laboral y que metodo de estudio favorece esa conciliacion?",
+    "type": "multi_doc",
+    "category": "metodologia",
+    "expected_sources": [
+      "centros-examenes",
+      "como-estudiar-online"
+    ],
+    "expected_facts": [
+      "Los examenes pueden realizarse en linea desde casa o de forma presencial en sedes con horarios adaptados",
+      "La metodologia permite asistir a clase cuando y donde se quiera mediante el Campus Virtual",
+      "Las clases se graban para verlas en diferido en cualquier momento"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que opciones de formacion continua y bolsa de empleo tiene UNIR para sus egresados?",
+    "type": "multi_doc",
+    "category": "empleabilidad",
+    "expected_sources": [
+      "uniralumni",
+      "bolsa-de-empleo-coie"
+    ],
+    "expected_facts": [
+      "UNIRalumni ofrece becas formativas, ferias de empleo y orientacion laboral",
+      "El COIE gestiona la bolsa de empleo con mas de 2.200 empresas registradas",
+      "El acceso a la bolsa de empleo es gratuito para estudiantes y alumni"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Como funciona el acceso de estudiantes extranjeros a los estudios de postgrado en UNIR?",
+    "type": "multi_doc",
+    "category": "admisiones",
+    "expected_sources": [
+      "requisitos-acceso",
+      "como-matricularse"
+    ],
+    "expected_facts": [
+      "Los titulados de sistemas ajenos al EEES pueden acceder sin homologar su titulo si UNIR verifica el nivel equivalente",
+      "Esta via no implica homologacion del titulo previo ni su reconocimiento a otros efectos",
+      "El proceso de matricula pasa por un asesor personal que verifica los requisitos y elabora un plan de estudios"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que modalidades de postgrado ofrece UNIR y como se organizan?",
+    "type": "multi_doc",
+    "category": "titulaciones",
+    "expected_sources": [
+      "postgrados-online",
+      "estudia-con-nosotros"
+    ],
+    "expected_facts": [
+      "UNIR ofrece Masteres Oficiales, Masteres de Formacion Permanente, Programas, Expertos Universitarios y Cursos",
+      "La duracion de la mayoria de los masteres es de un ano lectivo",
+      "Tambien ofrece Doctorado online",
+      "La oferta cubre areas de Educacion, Derecho, Ingenieria, Salud, Empresa y otras"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que menciones y grados de educacion tiene UNIR y que servicio ofrece para apoyar a los docentes en practicas?",
+    "type": "multi_doc",
+    "category": "facultades",
+    "expected_sources": [
+      "facultad-educacion",
+      "bolsa-de-empleo-coie"
+    ],
+    "expected_facts": [
+      "La Facultad de Educacion ofrece 17 titulaciones de grado incluyendo menciones especializadas",
+      "El COIE gestiona practicas curriculares y extracurriculares en mas de 1.500 empresas"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que titulaciones de grado y postgrado tiene la Facultad de Derecho de UNIR y cuantos masteres?",
+    "type": "multi_doc",
+    "category": "facultades",
+    "expected_sources": [
+      "facultad-derecho",
+      "postgrados-online"
+    ],
+    "expected_facts": [
+      "La Facultad de Derecho ofrece 9 titulaciones de grado",
+      "Cuenta con al menos 51 masteres oficiales",
+      "Incluye multiples dobles masteres de Abogacia con especializaciones en distintas ramas juridicas"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que herramientas de comunicacion y recursos academicos tiene el Campus Virtual de UNIR y como complementa la metodologia de estudio online?",
+    "type": "multi_doc",
+    "category": "metodologia",
+    "expected_sources": [
+      "conoce-el-campus",
+      "como-estudiar-online"
+    ],
+    "expected_facts": [
+      "El Campus Virtual incluye correo, foros, chats, tablones y comunicaciones de ultima hora",
+      "Las clases pueden verse en directo o en diferido en cualquier momento",
+      "Cada estudiante tiene un mentor personal que le orienta y acompaña a lo largo del curso",
+      "Los recursos de cada asignatura incluyen ideas clave, materiales recomendados, actividades y test de autoevaluacion"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Compara la oferta de la Facultad de Educacion con la de la ESIT de UNIR",
+    "type": "comparative",
+    "category": "facultades",
+    "expected_sources": [
+      "facultad-educacion",
+      "esit"
+    ],
+    "expected_facts": [
+      "La Facultad de Educacion ofrece 17 grados centrados en docencia, pedagogia y humanidades",
+      "La ESIT ofrece 9 grados centrados en tecnologia, ingenieria, diseño y ciencias",
+      "La Facultad de Educacion tiene al menos 36 masteres oficiales; la ESIT tiene al menos 34",
+      "La ESIT incluye titulaciones como Ciberseguridad, Ciencia de Datos e Ingenieria Informatica"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "En que se diferencian los grados online y los postgrados online en UNIR?",
+    "type": "comparative",
+    "category": "titulaciones",
+    "expected_sources": [
+      "grados-online",
+      "postgrados-online"
+    ],
+    "expected_facts": [
+      "Los grados son titulaciones de primer ciclo que forman para el acceso al mercado laboral",
+      "Los postgrados incluyen masteres oficiales, masteres propios, expertos universitarios y doctorados",
+      "Para acceder a un postgrado oficial se necesita un titulo universitario oficial previo",
+      "La duracion de los masteres suele ser de un ano lectivo"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Compara los doctorados de UNIR con la oferta de la Escuela de Doctorado.",
+    "type": "comparative",
+    "category": "doctorado",
+    "expected_sources": [
+      "doctorados",
+      "escuela-doctorado"
+    ],
+    "expected_facts": [
+      "La Escuela de Doctorado ofrece cuatro programas de doctorado en areas de Ciencias Sociales, Informatica, Humanidades y Economia",
+      "Existen becas especificas de la Escuela de Doctorado como contratos predoctorales y becas asociadas a grupos de investigacion",
+      "Los egresados de UNIR tienen un descuento del 5% en el doctorado"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que diferencias hay entre UNIR Alumni y la bolsa de empleo del COIE?",
+    "type": "comparative",
+    "category": "empleabilidad",
+    "expected_sources": [
+      "uniralumni",
+      "bolsa-de-empleo-coie"
+    ],
+    "expected_facts": [
+      "UNIRalumni es la comunidad de egresados orientada a la continuacion del aprendizaje y la red de contactos",
+      "El COIE es el departamento de empleo orientado a la intermediacion laboral y las practicas durante los estudios",
+      "Ambos servicios ofrecen acceso a ferias virtuales de empleo",
+      "El COIE gestiona practicas en mas de 1.500 empresas; UNIRalumni ofrece becas formativas para egresados"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que diferencias hay entre el reconocimiento de creditos de estudios universitarios y el reconocimiento por experiencia profesional en UNIR?",
+    "type": "comparative",
+    "category": "admisiones",
+    "expected_sources": [
+      "reconocimiento-creditos"
+    ],
+    "expected_facts": [
+      "El reconocimiento de estudios universitarios requiere certificado academico oficial o copia compulsada",
+      "El reconocimiento por experiencia profesional requiere certificados de empresa y vida laboral",
+      "En el caso de experiencia profesional puede solicitarse documentacion adicional para clarificar funciones",
+      "Ambas modalidades tienen el mismo coste de reconocimiento definitivo (12 euros por ECTS de otra universidad)"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Compara el acceso a los estudios de grado con el acceso a los estudios de postgrado en UNIR.",
+    "type": "comparative",
+    "category": "admisiones",
+    "expected_sources": [
+      "requisitos-acceso"
+    ],
+    "expected_facts": [
+      "Para el grado se puede acceder desde Bachillerato/PAU, FP Superior o pruebas de mayores",
+      "Para el postgrado oficial se requiere titulo universitario espanol u equivalente del EEES",
+      "Los titulos propios generalmente no exigen condiciones oficiales especificas de acceso",
+      "El postgrado puede exigir requisitos adicionales especificos segun cada programa"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que diferencias hay entre el SANNEE y el Servicio de Orientacion Academica de UNIR?",
+    "type": "comparative",
+    "category": "servicios",
+    "expected_sources": [
+      "atencion-necesidades-especiales",
+      "orientacion-academica"
+    ],
+    "expected_facts": [
+      "El SANNEE presta apoyo a estudiantes con diversidad funcional temporal o permanente e incluye adaptaciones curriculares y de examenes",
+      "El SOA ofrece estrategias y herramientas de aprendizaje para todos los estudiantes y atiende dificultades de aprendizaje",
+      "Ambos servicios colaboran para ofrecer un servicio integral al estudiante con necesidades especiales",
+      "El correo del SANNEE es necesidadesespeciales@unir.net; el del SOA es soa@unir.net"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Compara estudiar un grado de la Facultad de Derecho frente a uno de la Facultad de Educacion en UNIR.",
+    "type": "comparative",
+    "category": "facultades",
+    "expected_sources": [
+      "facultad-derecho",
+      "facultad-educacion"
+    ],
+    "expected_facts": [
+      "La Facultad de Derecho se centra en ambitos juridicos, politicos y criminologicos",
+      "La Facultad de Educacion se centra en formacion docente, pedagogia y humanidades",
+      "Ambas facultades ofrecen 9 y 17 titulaciones de grado respectivamente",
+      "La Facultad de Derecho ofrece numerosos dobles grados como Derecho y ADE o Derecho y Criminologia"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Que diferencias existen entre las clases en directo y las clases en diferido del Campus Virtual de UNIR?",
+    "type": "comparative",
+    "category": "metodologia",
+    "expected_sources": [
+      "como-estudiar-online",
+      "conoce-el-campus"
+    ],
+    "expected_facts": [
+      "Las clases en directo permiten interactuar con el profesor y compañeros en tiempo real mediante chat y pizarra virtual",
+      "Las clases en diferido estan grabadas y pueden visualizarse en cualquier momento y tantas veces como se quiera",
+      "Existen tambien clases especificas para resolver dudas sobre lecciones en formato en directo"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Compara las opciones de becas de movilidad con las becas de estudio generales que ofrece UNIR.",
+    "type": "comparative",
+    "category": "becas",
+    "expected_sources": [
+      "oficina-movilidad",
+      "becas-universitarias-y-precios"
+    ],
+    "expected_facts": [
+      "Las becas de movilidad son especificas para participar en el programa Erasmus+ en paises de la UE",
+      "Las becas generales incluyen ayudas del Ministerio de Educacion, becas propias de UNIR y descuentos por pronto pago",
+      "Las becas de movilidad requieren ser estudiante de UNIR y participar en el programa Erasmus+",
+      "Las becas generales pueden cubrir la totalidad o parte del coste de la matricula"
+    ],
+    "answerable": true
+  },
+  {
+    "question": "Cual es la tasa exacta de empleabilidad de cada master de UNIR en 2025?",
+    "type": "unanswerable",
+    "category": "empleabilidad",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Cual sera el precio exacto de todos los grados de UNIR en 2027?",
+    "type": "unanswerable",
+    "category": "matricula",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Cuantas plazas exactas tendra cada master de UNIR en 2026?",
+    "type": "unanswerable",
+    "category": "admisiones",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Que ranking internacional colocara a UNIR en primer lugar en 2028?",
+    "type": "unanswerable",
+    "category": "calidad",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Cual es el porcentaje exacto de exito laboral por facultad en 2026?",
+    "type": "unanswerable",
+    "category": "empleabilidad",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Cual es la nota de corte exacta para entrar al Grado en Derecho de UNIR este año?",
+    "type": "unanswerable",
+    "category": "admisiones",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Cuanto dinero exacto recibira un estudiante de UNIR por la beca Erasmus en 2026?",
+    "type": "unanswerable",
+    "category": "movilidad",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Cuantos profesores exactamente tiene la Facultad de Educacion de UNIR?",
+    "type": "unanswerable",
+    "category": "facultades",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "Cual es el salario medio de un egresado del Master en Ciberseguridad de UNIR?",
+    "type": "unanswerable",
+    "category": "empleabilidad",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  },
+  {
+    "question": "En que fecha exacta abrira la matricula del proximo curso academico en UNIR?",
+    "type": "unanswerable",
+    "category": "matricula",
+    "expected_sources": [],
+    "expected_facts": [],
+    "answerable": false
+  }
+]

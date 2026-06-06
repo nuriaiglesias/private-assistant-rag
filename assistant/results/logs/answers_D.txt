@@ -1,0 +1,18 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights:  40%|████      | 157/391 [00:00<00:00, 1566.81it/s]Loading weights: 100%|██████████| 391/391 [00:00<00:00, 2612.18it/s]
+Traceback (most recent call last):
+  File "/home/niglesia/code/TFM/assistant/scripts/eval/evaluate_orchestrator.py", line 299, in <module>
+    main()
+  File "/home/niglesia/code/TFM/assistant/scripts/eval/evaluate_orchestrator.py", line 250, in main
+    metrics, rows = _evaluate_mode(
+  File "/home/niglesia/code/TFM/assistant/scripts/eval/evaluate_orchestrator.py", line 74, in _evaluate_mode
+    response = pipeline.run_pipeline(
+  File "/home/niglesia/code/TFM/assistant/src/assistant/rag/pipeline.py", line 72, in run_pipeline
+    result = self._run_orchestrator(
+  File "/home/niglesia/code/TFM/assistant/src/assistant/rag/pipeline.py", line 306, in _run_orchestrator
+    min_score=self._config.rag_min_score,
+  File "/home/niglesia/code/TFM/assistant/src/assistant/orchestrator/orchestrator.py", line 97, in run
+    return self._run_single_doc(
+  File "/home/niglesia/code/TFM/assistant/src/assistant/orchestrator/orchestrator.py", line 319, in _run_single_doc
+    final_chunks = self._rerank(question, retrieved_chunks, top_k)
+TypeError: RagPipeline.rerank() takes 3 positional arguments but 4 were given
