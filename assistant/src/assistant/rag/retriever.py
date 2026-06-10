@@ -118,7 +118,7 @@ class _Chunk:
 
 
 class _BM25Index:
-    def __init__(self, chunks: List[_Chunk], bm25: BM25Okapi) -> None:
+    def __init__(self, chunks: List[_Chunk], bm25: BM25Okapi | None) -> None:
         self._chunks = chunks
         self._bm25 = bm25
 
@@ -168,10 +168,17 @@ class _BM25Index:
                 )
                 tokenized_chunks.append(_tokenize(chunk))
 
+        if not tokenized_chunks:
+            # Empty corpus: return an index that will return no lexical results.
+            return cls(chunks, None)
+
         bm25 = BM25Okapi(tokenized_chunks)
         return cls(chunks, bm25)
 
     def search(self, query: str, top_k: int = 5) -> List[RetrievedChunk]:
+        if not self._bm25:
+            return []
+
         query_tokens = _tokenize(query)
         scores = self._bm25.get_scores(query_tokens)
         ranked = sorted(

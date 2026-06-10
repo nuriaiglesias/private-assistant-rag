@@ -35,8 +35,8 @@ def _inject_styles() -> None:
 
 def _variant_to_flags(variant: str, orchestrator_rerank: bool) -> tuple[bool, bool, bool, bool]:
     if variant == "A_semantic_llm":
-        # Lightweight path: BM25 lexical retrieval + LLM generation.
-        return True, False, False, False
+        # Baseline: dense semantic retrieval + LLM generation.
+        return False, False, False, False
     if variant == "B_hybrid_llm":
         return False, True, False, False
     if variant == "C_hybrid_rerank_llm":

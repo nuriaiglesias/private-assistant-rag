@@ -27,12 +27,12 @@ CORPUS_DIR = env_path("ASSISTANT_CORPUS_DIR", REPO_ROOT / "corpus")
 BENCHMARKS_DIR = env_path("ASSISTANT_BENCHMARKS_DIR", REPO_ROOT / "benchmarks")
 RESULTS_DIR = env_path("ASSISTANT_RESULTS_DIR", REPO_ROOT / "results")
 
-UNIR_RAW_DIR = CORPUS_DIR / "raw" / "unir"
-UNIR_SEEDS_PATH = UNIR_RAW_DIR / "unir_seeds.json"
-UNIR_HTML_DIR = UNIR_RAW_DIR / "html"
+UNIR_RAW_DIR = CORPUS_DIR / "raw"
+UNIR_SEEDS_PATH = UNIR_RAW_DIR / "unir_seeds.jsonl"
+UNIR_HTML_DIR = env_path("UNIR_HTML_DIR", REPO_ROOT / "data" / "raw" / "unir_html")
 
-UNIR_PROCESSED_DIR = CORPUS_DIR / "processed" / "unir"
-UNIR_MARKDOWN_DIR = UNIR_PROCESSED_DIR / "markdown"
-UNIR_CHUNKS_PATH = UNIR_PROCESSED_DIR / "chunks.jsonl"
+UNIR_PROCESSED_DIR = CORPUS_DIR / "processed_md"
+UNIR_MARKDOWN_DIR = UNIR_PROCESSED_DIR
+UNIR_CHUNKS_PATH = CORPUS_DIR / "chunks" / "unir.jsonl"
 
 PIPELINE_RUNS_PATH = RESULTS_DIR / "pipeline_runs.jsonl"

@@ -14,3 +14,5 @@ opentelemetry-sdk
 opentelemetry-exporter-otlp
 msal
 datasets
+rouge-score
+bert-score

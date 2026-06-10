@@ -15,8 +15,9 @@ from assistant.core.paths import PIPELINE_RUNS_PATH
 from assistant.llm.base import ChatMessage
 from assistant.llm.factory import build_llm_client
 from assistant.observability.phoenix import configure_tracer
-from assistant.orchestrator.orchestrator import RAGOrchestrator
+from assistant.orchestrator.react_orchestrator import ReactOrchestrator
 from assistant.orchestrator.state import OrchestratorPlan, ToolCall
+from assistant.rag.query_rewriter import QueryRewriter
 from assistant.rag.reranker import Reranker
 from assistant.rag.retriever import RetrievedChunk, Retriever
 from assistant.tools.email_tool import EmailDraft, EmailTool
@@ -46,6 +47,7 @@ class RagPipeline:
         self._retriever = Retriever(config)
         self._reranker = Reranker(config)
         self._llm = build_llm_client(config)
+        self._query_rewriter: QueryRewriter | None = None
         self._prompts_dir = Path(__file__).resolve().parents[1] / "prompts"
         self._tracer = configure_tracer(config)
         self._pipeline_run_path = self._resolve_pipeline_run_path()
@@ -67,9 +69,10 @@ class RagPipeline:
         use_hybrid: bool = False,
         use_reranking: bool = False,
         use_orchestrator: bool = False,
+        use_query_rewriting: bool = False,
     ) -> RagResponse:
         """Execute the RAG pipeline and return a structured response."""
-        # El reranking trabaja sobre candidatos híbridos.
+        # Reranking always uses hybrid candidates.
         use_hybrid = use_hybrid or use_reranking
 
         with self._tracer.start_as_current_span("rag.run") as span:
@@ -81,6 +84,7 @@ class RagPipeline:
             span.set_attribute("rag.use_hybrid", use_hybrid)
             span.set_attribute("rag.use_reranking", use_reranking)
             span.set_attribute("rag.use_orchestrator", use_orchestrator)
+            span.set_attribute("rag.use_query_rewriting", use_query_rewriting)
 
             if use_orchestrator:
                 result = self._run_orchestrator(
@@ -103,10 +107,20 @@ class RagPipeline:
                 email_draft = result.email_draft
 
             else:
+                # Query rewriting: produce a retrieval-optimised version of the question.
+                # The rewritten query is used only for retrieval; generation always uses
+                # the original question so the answer stays relevant to what the user asked.
+                retrieval_question = question
+                if use_query_rewriting:
+                    with self._tracer.start_as_current_span("rag.query_rewrite") as rw_span:
+                        retrieval_question = self._get_query_rewriter().rewrite(question)
+                        rw_span.set_attribute("rag.original_question", question)
+                        rw_span.set_attribute("rag.rewritten_question", retrieval_question)
+
                 candidate_k = self._config.rag_candidate_k if use_hybrid else top_k
 
                 retrieved_sources = self.retrieve(
-                    question,
+                    retrieval_question,
                     top_k=candidate_k,
                     use_lexical=use_lexical,
                     use_hybrid=use_hybrid,
@@ -116,7 +130,7 @@ class RagPipeline:
 
                 if use_reranking:
                     final_sources = self.rerank(
-                        question,
+                        retrieval_question,
                         retrieved_sources,
                         top_k=top_k,
                     )
@@ -392,26 +406,22 @@ class RagPipeline:
         from assistant.orchestrator.state import OrchestratorResult
 
         with self._tracer.start_as_current_span("rag.orchestrator") as span:
-            steps = ["retrieve", "generate"]
-
+            steps = ["reason", "retrieve", "generate"]
             if use_reranking:
-                steps.insert(1, "rerank")
-
+                steps.insert(2, "rerank")
             span.set_attribute("rag.orchestrator_steps", ", ".join(steps))
+            span.set_attribute("rag.orchestrator_type", "react")
 
             candidate_k = self._config.rag_candidate_k if use_reranking else top_k
 
-            orchestrator = RAGOrchestrator(
+            orchestrator = ReactOrchestrator(
                 retrieve=self.retrieve,
                 rerank=self.rerank,
                 generate_answer=lambda question_text, chunks, style: (
-                    self.generate_answer(
-                        question_text,
-                        chunks,
-                        answer_style=style,
-                    )
+                    self.generate_answer(question_text, chunks, answer_style=style)
                 ),
                 min_score=self._config.rag_min_score,
+                llm_client=self._llm,
                 email_tool=EmailTool(),
             )
 
@@ -421,6 +431,11 @@ class RagPipeline:
                 use_reranking=use_reranking,
                 candidate_k=candidate_k,
             )
+
+    def _get_query_rewriter(self) -> QueryRewriter:
+        if self._query_rewriter is None:
+            self._query_rewriter = QueryRewriter(self._llm)
+        return self._query_rewriter
 
     def _should_refuse(self, sources: List[RetrievedChunk]) -> bool:
         min_score = self._config.rag_min_score

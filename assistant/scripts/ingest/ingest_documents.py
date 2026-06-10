@@ -17,7 +17,7 @@ def main() -> None:
     parser.add_argument(
         "--input",
         help="Directory with documents to ingest",
-        default="data/raw",
+        default="corpus/processed_md",
     )
     args = parser.parse_args()
 

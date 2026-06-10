@@ -105,7 +105,9 @@ D: Orquestador + Híbrido + Reranker + LLM & Densa + léxica & Sí & Sí & Sí \
 
 En el trabajo se evaluaron las cuatro variantes del \textit{ablation study}. Las variantes A, B y C permiten aislar el efecto individual de la recuperación híbrida y del reranker sobre la calidad de la evidencia recuperada. La variante D combina el orquestador con recuperación híbrida y reranking, y permite analizar el efecto del componente de orquestación sobre el control del flujo y la activación de herramientas.
 
-El orquestador implementado no sigue el paradigma ReAct, en el que un modelo de lenguaje razona de forma iterativa sobre herramientas y observaciones. En su lugar, la planificación se realiza a través de reglas determinístas aplicadas sobre el texto de la consulta, sin intervención de ningún componente generativo en el ciclo de decisión. La activación de herramientas se produce únicamente cuando la clasificación de la intención coincide con una de las acciones permitidas definidas en el sistema.
+El orquestador implementado sigue el paradigma ReAct \cite{yao2023react} (\textit{Reasoning + Acting}), en el que el modelo de lenguaje actúa como motor de decisión dentro de un bucle iterativo de \textit{Pensamiento $\to$ Acción $\to$ Observación}.
+En cada paso, el LLM selecciona la herramienta a invocar —búsqueda en el corpus (\textit{buscar}), rechazo por falta de evidencia (\textit{rechazar}), redacción de correo (\textit{redactar\_correo}) o señal de respuesta suficiente (\textit{responder})— y el sistema devuelve la observación al modelo para el siguiente ciclo.
+Este diseño permite que el orquestador adapte su estrategia de recuperación en tiempo de ejecución en función del contenido real de los documentos encontrados.
 
 
 \section{Resultados de recuperación}\label{sec:resultados-recuperacion}
@@ -118,20 +120,20 @@ En esta sección se comparan los resultados obtenidos por las variantes A, B y C
 \toprule
 \textbf{Variante} & \textbf{Hit@1} & \textbf{$\Delta$} & \textbf{Hit@3} & \textbf{$\Delta$} & \textbf{MRR} & \textbf{$\Delta$} \\
 \midrule
-A: Semántico + LLM & 0.574 & -- & 0.770 & -- & 0.686 & -- \\
-B: Híbrido (RRF) + LLM & 0.541 & $-$0.033 & 0.820 & +0.050 & 0.703 & +0.017 \\
-C: Híbrido (RRF) + Reranker + LLM & 0.639 & +0.065 & 0.852 & +0.082 & 0.759 & +0.073 \\
+A: Semántico + LLM & 0.574 & -- & 0.852 & -- & 0.712 & -- \\
+B: Híbrido (RRF) + LLM & 0.525 & $-$0.049 & 0.902 & +0.050 & 0.706 & $-$0.006 \\
+C: Híbrido (RRF) + Reranker + LLM & 0.557 & $-$0.017 & 0.918 & +0.066 & 0.738 & +0.026 \\
 \bottomrule
 \end{tabular}
 \caption{Resultados de recuperación del \textit{ablation study}.}
 \label{tab:resultados-recuperacion}
 \end{table}
 
-Los resultados muestran una mejora progresiva en las métricas de recuperación a medida que se incorporan los componentes adicionales. La variante A (semántico puro) obtiene Hit@1 = 0.574, Hit@3 = 0.770 y MRR = 0.686 como línea base.
+Los resultados muestran un patrón diferenciado según el componente incorporado. La variante A (semántico puro) obtiene Hit@1 = 0.574, Hit@3 = 0.852 y MRR = 0.712 como línea base, con buena precisión en la primera posición pero cobertura moderada en el top-3.
 
-La variante B (recuperación híbrida con \textit{Reciprocal Rank Fusion}) obtiene Hit@1 = 0.541, Hit@3 = 0.820 y MRR = 0.703. Si bien Hit@1 desciende ligeramente respecto a A ($-$0.033), Hit@3 mejora en 5 puntos porcentuales (+0.050) y MRR en +0.017. Este resultado indica que la recuperación híbrida no siempre coloca la fuente correcta en primera posición, pero sí incrementa la presencia de evidencia relevante en el top-3, lo que resulta útil cuando el reranker opera sobre el conjunto de candidatos.
+La variante B (recuperación híbrida con \textit{Reciprocal Rank Fusion}) obtiene Hit@1 = 0.525 ($-$0.049 respecto a A), Hit@3 = 0.902 (+0.050) y MRR = 0.706 ($-$0.006). La combinación densa y léxica introduce mayor diversidad de candidatos, lo que incrementa la presencia de documentos relevantes en el top-3 (+5,0 puntos porcentuales), pero puede desplazar documentos altamente relevantes de la primera posición cuando BM25 introduce candidatos léxicamente similares con menor relevancia semántica.
 
-La variante C (híbrido RRF + reranker) obtiene Hit@1 = 0.639 (+0.065 respecto a A), Hit@3 = 0.852 (+0.082) y MRR = 0.759 (+0.073). La combinación de recuperación híbrida y reranking produce la mayor mejora en todas las métricas. La comparación entre B y C aísla la contribución del reranker: al operar sobre el conjunto de candidatos recuperado por RRF, que ya incluye más documentos relevantes en posiciones intermedias, el reranker consigue elevarlos a las primeras posiciones, traduciendo la ganancia en cobertura de B en una ganancia en precisión en C.
+La variante C (híbrido RRF + reranker \textit{BAAI/bge-reranker-v2-m3}) obtiene Hit@1 = 0.557 ($-$0.017 respecto a A), Hit@3 = 0.918 (+0.066) y MRR = 0.738 (+0.026). El reranker multilingüe recupera parcialmente la precisión en primera posición y eleva la MRR por encima de la línea base, lo que indica que el modelo \textit{cross-encoder} es capaz de reordenar correctamente los candidatos del pool híbrido. Hit@3 alcanza el valor más alto de las tres variantes (0.918), confirmando que la combinación de recuperación híbrida con reranking proporciona el pool de evidencia más rico para la generación.
 
 \section{Resultados de calidad de respuesta}\label{sec:resultados-respuesta}
 
@@ -184,13 +186,13 @@ Solicitud de correo & 6 & 5/6 (0,83) & \textemdash & \textemdash \\
 \label{tab:validacion-funcional-orquestador}
 \end{table}
 
-Los resultados muestran un comportamiento heterogéneo según el tipo de consulta. Las preguntas comparativas alcanzan el enrutamiento perfecto (4/4), y las de un único documento obtienen un 87\,\% de enrutamiento correcto con una media de una llamada a herramienta por consulta. Las preguntas no respondibles son gestionadas correctamente en todos los casos, con una tasa de abstención del 100\,\%. Las solicitudes de correo se detectan en 5 de 6 casos (83\,\%). Sin embargo, el enrutamiento de preguntas multi-documento resulta el más problemático, con solo un 33\,\% de clasificaciones correctas, lo que sugiere que los marcadores léxicos empleados para detectar este tipo de consulta no son suficientemente discriminativos y requerirán refinamiento en iteraciones futuras.
+Los resultados muestran un comportamiento heterogéneo según el tipo de consulta. Las preguntas comparativas alcanzan el enrutamiento perfecto (4/4), y las de un único documento obtienen un 87\,\% de enrutamiento correcto con una media de una llamada a herramienta por consulta. Las preguntas no respondibles son gestionadas correctamente en todos los casos, con una tasa de abstención del 100\,\%. Las solicitudes de correo se detectan en 5 de 6 casos (83\,\%). Sin embargo, el enrutamiento de preguntas multi-documento resulta el más problemático, con solo un 33\,\% de clasificaciones correctas, lo que sugiere que este tipo de consulta resulta especialmente difícil de identificar de forma automática y requeriría mayor esfuerzo de ajuste en iteraciones futuras.
 
 \section{Discusión de resultados}\label{sec:discusion-resultados}
 
 Los resultados obtenidos permiten extraer varias conclusiones relevantes sobre el comportamiento del sistema.
 
-En primer lugar, la incorporación de recuperación híbrida y reranking mejora el rendimiento del sistema en las métricas de recuperación. La variante B (híbrido RRF) muestra que la fusión léxico-semántica aporta una mejora moderada: Hit@3 pasa de 0.770 a 0.820 (+0.050) y MRR de 0.686 a 0.703 (+0.017), aunque Hit@1 desciende ligeramente. La variante C (híbrido RRF + reranker) produce la mayor mejora global: Hit@1 pasa de 0.574 a 0.639 (+0.065), Hit@3 de 0.770 a 0.852 (+0.082) y MRR de 0.686 a 0.759 (+0.073). Estos resultados muestran que ambos componentes son complementarios: la recuperación híbrida amplía el conjunto de candidatos relevantes disponibles en posiciones intermedias del ranking, y el reranker los eleva a las primeras posiciones.
+En primer lugar, la incorporación de recuperación híbrida y reranking mejora el rendimiento del sistema en las métricas de recuperación. La variante B (híbrido RRF) muestra que la fusión léxico-semántica amplía la cobertura en el top-3: Hit@3 pasa de 0.852 a 0.902 (+0.050) respecto a A, aunque Hit@1 desciende ligeramente ($-$0.049) y MRR se mantiene prácticamente igual ($-$0.006). Este patrón indica que BM25 introduce candidatos léxicamente relevantes que mejoran la presencia de la fuente esperada en posiciones intermedias, pero no siempre en primera posición. La variante C (híbrido RRF + reranker \textit{BAAI/bge-reranker-v2-m3}) obtiene Hit@1 = 0.557 ($-$0.017 respecto a A), Hit@3 = 0.918 (+0.066) y MRR = 0.738 (+0.026). El reranker multilingüe reordena el pool híbrido de forma más precisa: Hit@3 alcanza su valor máximo y MRR supera al baseline, confirmando que el modelo \textit{cross-encoder} aporta una discriminación adicional que no ofrece ni la búsqueda semántica ni la léxica por separado.
 
 En segundo lugar, el orquestador no mejora la cobertura del \textit{ground truth} respecto al flujo determinista en la configuración evaluada. Este resultado puede explicarse por varios factores. Por un lado, el orquestador adopta un comportamiento más conservador, especialmente cuando la evidencia recuperada no es suficientemente clara. Por otro lado, la métrica de cobertura del \textit{ground truth} depende de la coincidencia entre la respuesta generada y un conjunto concreto de hechos definidos previamente, por lo que puede penalizar respuestas correctas formuladas de manera más general o prudente. Además, el modelo generativo empleado es de tamaño reducido y los prompts del orquestador no han sido objeto de un ajuste sistemático, lo que puede introducir variabilidad en la cobertura factual con independencia del componente de recuperación. Ajustar los prompts y explorar modelos generativos de mayor capacidad son líneas de mejora directas para incrementar esta métrica en iteraciones futuras.
 
@@ -212,6 +214,6 @@ Finalmente, la evaluación funcional del orquestador permite comprobar que los f
 
 \section{Síntesis de resultados}\label{sec:sintesis-resultados}
 
-A modo de síntesis, los experimentos realizados muestran que la variante con recuperación híbrida y reranking (C) mejora de forma notable los resultados de recuperación respecto al baseline semántico (A): +6.5 puntos en Hit@1, +8.2 en Hit@3 y +7.3 en MRR. El \textit{ablation study} revela que ambos componentes contribuyen de forma complementaria: la variante B (híbrido RRF sin reranker) mejora Hit@3 en +5.0 puntos respecto a A, ampliando la cobertura de evidencia relevante en el top-3; la variante C añade el reranker sobre ese conjunto de candidatos, traduciendo dicha cobertura en mayor precisión en primera posición.
+A modo de síntesis, los experimentos realizados muestran que la variante C (híbrido RRF + reranker) es la mejor configuración global para recuperación: obtiene el Hit@3 más alto (0.918, +0.066 respecto a A) y la MRR más alta (0.738, +0.026 respecto a A). El \textit{ablation study} revela que ambos componentes contribuyen de forma diferenciada y complementaria: la variante B (híbrido RRF sin reranker) mejora principalmente la cobertura en el top-3 (Hit@3 +0.050), mientras que la variante C añade el reranker multilingüe que no solo amplía la cobertura sino que también mejora la calidad del ranking (MRR +0.026 sobre A). Hit@1 desciende ligeramente en B y C respecto a A, lo que sugiere que el pool de candidatos ampliado por BM25 puede introducir ruido en la primera posición que el reranker no siempre compensa completamente.
 
 Por otro lado, la comparación entre el flujo determinista y el orquestador muestra que el segundo no incrementa la cobertura del \textit{ground truth} en esta configuración, pero sí mejora de forma notable la abstención ante preguntas no respondibles y permite incorporar capacidades accionables. Estos resultados respaldan la utilidad de una arquitectura modular, en la que las mejoras de recuperación y las capacidades de orquestación cumplen funciones distintas pero complementarias dentro del asistente institucional.

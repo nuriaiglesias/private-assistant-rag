@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
 from urllib.parse import urlparse
@@ -106,7 +107,17 @@ def evaluate_retrieval(
                 use_reranking=use_reranking,
             )
 
-            for rank, chunk in enumerate(results, start=1):
+            # Deduplicate retrieved chunks by document_id (keep first occurrence)
+            seen_docs = set()
+            dedup_results = []
+            for chunk in results:
+                doc_id = getattr(chunk, "document_id", None) or getattr(chunk, "url", chunk.source)
+                if doc_id in seen_docs:
+                    continue
+                seen_docs.add(doc_id)
+                dedup_results.append(chunk)
+
+            for rank, chunk in enumerate(dedup_results, start=1):
                 chunk_name = _basename(chunk.source)
                 if any(chunk_name == expected for expected in expected_sources):
                     matched_rank = rank
@@ -134,8 +145,8 @@ def evaluate_retrieval(
                 "hit1": matched_rank == 1,
                 "hit3": matched_rank is not None and matched_rank <= 3,
                 "mrr": 1.0 / matched_rank if matched_rank else 0.0,
-                "source_names": [chunk.source for chunk in results],
-                "source_scores": [chunk.score for chunk in results],
+                "source_names": [chunk.source for chunk in (dedup_results if not skipped_item else results)],
+                "source_scores": [chunk.score for chunk in (dedup_results if not skipped_item else results)],
             }
         )
 
@@ -145,4 +156,14 @@ def evaluate_retrieval(
 
     metrics = _calculate_ranking_metrics(hit1, hit3, mrr_total, total)
     metrics["skipped"] = skipped
+    # Save skipped questions for inspection
+    if skipped > 0:
+        skipped_rows = [r for r in rows if r.get("skipped")]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_path = Path("assistant/results") / f"skipped_questions_{timestamp}.jsonl"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with out_path.open("w", encoding="utf-8") as fh:
+            for r in skipped_rows:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+        print(f"Skipped questions written to {out_path}")
     return metrics, rows

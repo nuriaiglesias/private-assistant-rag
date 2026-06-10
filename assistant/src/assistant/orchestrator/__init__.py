@@ -1,4 +1,4 @@
-from assistant.orchestrator.orchestrator import RAGOrchestrator
+from assistant.orchestrator.react_orchestrator import ReactOrchestrator
 from assistant.orchestrator.state import (
     ActionType,
     IntentType,
@@ -14,6 +14,6 @@ __all__ = [
     "OrchestratorPlan",
     "OrchestratorResult",
     "QuestionType",
-    "RAGOrchestrator",
+    "ReactOrchestrator",
     "ToolCall",
 ]

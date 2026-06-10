@@ -54,7 +54,7 @@ class ToolCall:
 class OrchestratorResult:
     """Structured result returned by the orchestrator pipeline."""
     question: str
-    plan: OrchestratorPlan
+    plan: OrchestratorPlan | None
     retrieved_chunks: list[RetrievedChunk]
     final_chunks: list[RetrievedChunk]
     answer: str

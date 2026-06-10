@@ -53,21 +53,21 @@ Desde una perspectiva agéntica, cada consulta se trata como una tarea que puede
 Algunas preguntas pueden resolverse mediante una recuperación documental directa, mientras que otras requieren comparar información, dividir la consulta en partes o activar una herramienta accionable. 
 El orquestador permite introducir esta lógica de decisión sin acoplarla directamente al recuperador ni al modelo generativo.
 
-En el prototipo, el orquestador contempla principalmente cinco tipos de comportamiento. 
-En primer lugar, puede delegar una consulta simple al flujo RAG determinista. 
-En segundo lugar, puede tratar consultas multi-documento mediante una estrategia más estructurada. 
-En tercer lugar, puede organizar respuestas comparativas diferenciando entidades, criterios o condiciones. 
-En cuarto lugar, puede abstenerse ante consultas no respondibles cuando no existe evidencia suficiente en el corpus. 
-Finalmente, puede activar la herramienta de generación de borradores cuando detecta una petición orientada a acción.
+El orquestador implementado sigue el paradigma ReAct \cite{yao2023react} (\textit{Reasoning + Acting}).
+En cada iteración del bucle, el LLM produce un bloque estructurado con un pensamiento (\textit{Pensamiento}), la herramienta seleccionada (\textit{Herramienta}) y su argumento (\textit{Entrada}).
+El sistema ejecuta la herramienta y devuelve la observación al modelo, que la incorpora en el siguiente paso.
+Este ciclo \textit{Pensamiento $\to$ Acción $\to$ Observación} permite al orquestador razonar sobre la evidencia recuperada antes de decidir el siguiente paso, en lugar de seguir una secuencia fija predefinida.
 
-Esta separación aporta trazabilidad y control al sistema. 
-En lugar de generar siempre una respuesta del mismo modo, el asistente puede adaptar el flujo a la naturaleza de la consulta. 
-Además, permite evaluar de forma independiente el impacto del orquestador sobre dimensiones como la abstención, la selección de herramientas y la estructuración de respuestas.
+El conjunto de herramientas disponibles delimita el ámbito de actuación del asistente.
+La herramienta \texttt{buscar} permite recuperar fragmentos relevantes del corpus para una consulta concreta; puede invocarse varias veces con distintas reformulaciones.
+La herramienta \texttt{rechazar} señala que no existe evidencia suficiente para responder con rigor.
+La herramienta \texttt{redactar\_correo} genera un borrador de correo formal usando el contexto recuperado.
+La herramienta \texttt{responder} indica que el LLM considera que ya dispone de evidencia suficiente y delega la generación de la respuesta final al componente RAG base.
+Cualquier acción fuera de este conjunto es rechazada, convirtiendo al orquestador en una primera capa de \textit{guardrails} del sistema.
 
-Para reforzar este control, el orquestador define un conjunto explícito de acciones permitidas que delimitan el ámbito de actuación del asistente.
-En concreto, las acciones válidas son las siguientes: respuesta informativa sobre un único documento (\texttt{answer\_with\_rag}), respuesta informativa que combina evidencia de múltiples fuentes (\texttt{multi\_step\_rag}), respuesta comparativa entre entidades o documentos (\texttt{comparative\_rag}), generación supervisada de un borrador de correo electrónico (\texttt{draft\_email}) y abstención explícita cuando la consulta no puede responderse con la evidencia disponible en el corpus (\texttt{refuse}).
-Cualquier consulta cuya intención quede fuera de este conjunto predefinido es rechazada antes de activar herramientas o iniciar la generación, convirtiendo al orquestador en una primera capa de \textit{guardrails} del sistema.
-Este mecanismo evita que el asistente procese peticiones fuera del dominio definido, como solicitudes ajenas al ámbito institucional, peticiones que impliquen acciones no supervisadas o consultas que no puedan fundamentarse en el corpus documental disponible.
+Esta separación aporta trazabilidad y control al sistema.
+En lugar de generar siempre una respuesta del mismo modo, el asistente adapta el flujo a la naturaleza de la consulta, y cada paso del razonamiento queda registrado como una llamada a herramienta observable.
+Esto permite evaluar de forma independiente el impacto del orquestador sobre dimensiones como la abstención, la selección de herramientas y la estructuración de respuestas.
 
 \section{Herramientas disponibles}\label{sec:herramientas-disponibles}
 
@@ -100,11 +100,9 @@ La segunda variante introduce una mejora en el componente de recuperación de in
 En este caso, la búsqueda semántica se complementa con recuperación léxica mediante BM25 y con una etapa posterior de \textit{reranking}. 
 El objetivo de esta variante es comprobar si una recuperación más robusta permite situar la evidencia relevante en posiciones más altas del ranking y, por tanto, mejorar la calidad del contexto proporcionado al modelo de lenguaje.
 
-La tercera variante incorpora el agente orquestador. 
-En esta configuración, el sistema no aplica siempre el mismo flujo de forma determinista, sino que clasifica la consulta y decide cómo resolverla. 
-Esta variante permite analizar el valor del orquestador en tareas como la abstención ante preguntas no respondibles, la identificación de solicitudes accionables y la activación de herramientas.
-
-Una mejora relevante incorporada en la lógica del orquestador es la capacidad de gestionar consultas ambiguas o poco concretas. Cuando el sistema detecta que la pregunta del usuario carece de suficiente especificidad, no se limita a solicitar una aclaración, sino que primero genera una respuesta general basada en la evidencia disponible y, a continuación, plantea una pregunta de clarificación. De este modo, el usuario recibe información útil de inmediato y se fomenta un diálogo iterativo que permite afinar la respuesta en pasos sucesivos. Esta funcionalidad mejora la experiencia conversacional, ya que combina la entrega de valor inmediato con la capacidad de guiar al usuario hacia consultas más precisas, optimizando así la utilidad del asistente en escenarios reales donde las preguntas iniciales suelen ser vagas o incompletas.
+La tercera variante incorpora el agente orquestador basado en el paradigma ReAct.
+En esta configuración, el LLM actúa como motor de decisión en un bucle iterativo: razona sobre la evidencia recuperada, decide qué herramienta invocar a continuación y continúa hasta tener suficiente información para responder o determinar que no existe evidencia en el corpus.
+Esta variante permite analizar el valor del orquestador en tareas como la abstención ante preguntas no respondibles, la identificación de solicitudes accionables, la reformulación iterativa de consultas y la activación de herramientas especializadas.
 
 Estas variantes se implementan de forma configurable, permitiendo activar o desactivar componentes como la recuperación híbrida, el \textit{reranking} o el orquestador. 
 Esta decisión facilita la comparación experimental posterior, ya que cada configuración puede ejecutarse sobre el mismo corpus y el mismo conjunto de consultas de evaluación.
@@ -289,8 +287,9 @@ Este enfoque resulta especialmente útil en un asistente conversacional, ya que 
 
 Cabe señalar que en los agentes conversacionales es habitual incorporar una etapa previa de \textit{query rewriting}, consistente en reformular la consulta del usuario antes de lanzarla contra el índice documental \cite{ma2023queryrewriting}.
 Esta técnica permite adaptar el lenguaje natural de la pregunta al vocabulario del corpus, desambiguar referencias contextuales en conversaciones de múltiples turnos y mejorar la cobertura de recuperación.
-En el prototipo presentado no se ha implementado esta etapa, ya que el sistema opera en modo de un único turno por consulta, eliminando la necesidad de resolver referencias a contexto previo.
-Sin embargo, su incorporación constituiría una mejora natural del sistema en un escenario conversacional multi-turno.
+En el prototipo presentado se implementa una variante de \textit{query rewriting} activable mediante un parámetro de configuración.
+Cuando está activada, el LLM recibe la pregunta original y produce una consulta reformulada antes de lanzarla contra el índice, mejorando la cobertura en casos donde la formulación del usuario difiere del vocabulario del corpus.
+En el modo de orquestador ReAct, el propio LLM decide de forma iterativa qué consultas realizar, de modo que la reformulación queda integrada en el bucle de razonamiento y no se aplica como etapa previa independiente.
 
 \subsection{Recuperación híbrida con BM25}\label{subsec:recuperacion-hibrida}
 
@@ -308,6 +307,27 @@ donde $f(q_i, D)$ es la frecuencia del término $q_i$ en el documento $D$, $|D|$
 Este mecanismo tiene dos propiedades relevantes para el sistema. El factor IDF premia los términos infrecuentes en la colección, como nombres de trámites, titulaciones o conceptos administrativos específicos, que suelen ser señales discriminativas en consultas institucionales. El factor de normalización por longitud evita que los documentos más largos sean sistemáticamente favorecidos frente a documentos más cortos pero igualmente relevantes.
 
 En la variante híbrida, las puntuaciones de BM25 y de similitud vectorial se normalizan de forma independiente y se combinan mediante una suma ponderada con pesos ajustables. Esta combinación permite equilibrar las ventajas de la búsqueda semántica —que captura relaciones por significado incluso sin coincidencia léxica— con la precisión de BM25 ante términos específicos, mejorando la robustez del sistema ante distintos tipos de preguntas.
+
+\section{Modelo de lenguaje}\label{sec:modelo-lenguaje}
+
+El modelo de lenguaje es el componente encargado de generar la respuesta final a partir de la pregunta del usuario y del contexto recuperado.
+En este proyecto, el pipeline se diseña de forma desacoplada respecto al proveedor concreto del modelo, de manera que sea posible utilizar distintas alternativas sin modificar la arquitectura general del sistema.
+
+Durante el desarrollo del prototipo se prioriza el uso de proveedores compatibles con interfaces de tipo API, lo que facilita alternar entre modelos locales y servicios externos.
+En particular, herramientas como Ollama permiten ejecutar modelos localmente y ofrecen compatibilidad con interfaces similares a la API de OpenAI, lo que simplifica la integración con aplicaciones ya preparadas para este tipo de proveedores \cite{ollamaOpenAICompatibility}.
+De forma complementaria, vLLM se emplea como servidor de inferencia local compatible con la misma interfaz, lo que permite aprovechar aceleración por GPU cuando está disponible \cite{kwon2023efficient}.
+
+El modelo utilizado por defecto en el prototipo para la generación de respuestas es \textit{Qwen2.5-0.5B-Instruct}, un modelo instruccionado de la familia Qwen~2.5, seleccionado por su reducido tamaño (500 millones de parámetros), su capacidad para seguir instrucciones en español e inglés y su compatibilidad con entornos de cómputo limitados \cite{qwen2025}.
+La arquitectura desacoplada del pipeline permite sustituir este modelo por alternativas de mayor capacidad —como Llama, Mistral o modelos propietarios accesibles mediante API— sin modificar el resto de componentes.
+
+Respecto al orquestador, este sigue el paradigma ReAct \cite{yao2023react} (\textit{Reasoning + Acting}), en el que el modelo de lenguaje actúa como motor de decisión en un bucle iterativo.
+En cada iteración, el LLM produce un bloque estructurado compuesto por un pensamiento (\textit{Pensamiento}), la herramienta que decide invocar (\textit{Herramienta}) y su argumento (\textit{Entrada}).
+El sistema ejecuta la herramienta indicada —búsqueda en el corpus, redacción de correo, rechazo o respuesta final— y devuelve la observación resultante al modelo, que la incorpora en el siguiente paso.
+Este ciclo \textit{Pensamiento $\to$ Acción $\to$ Observación} se repite hasta que el LLM invoca la acción \textit{responder}, indicando que dispone de evidencia suficiente, o la acción \textit{rechazar}, cuando no encuentra información relevante en el corpus.
+La generación de la respuesta final se delega siempre al prompt RAG estándar, de modo que el orquestador decide \emph{qué} recuperar y \emph{cuándo} responder, mientras que el componente generativo base se encarga de la redacción.
+
+Esta arquitectura permite mantener flexibilidad experimental: los modelos locales favorecen el control del entorno y la reducción de costes, mientras que las APIs externas pueden emplearse en fases concretas si se requiere una mayor calidad de generación.
+Así, el sistema no queda ligado a un único modelo ni a una única tecnología de inferencia.
 
 \section{Mejora de la recuperación mediante reranking}\label{sec:reranking}
 
@@ -335,26 +355,6 @@ Se trata de un modelo transformer de tipo encoder, entrenado mediante aprendizaj
 A diferencia del modelo de embeddings BGE-M3, que genera representaciones vectoriales independientes para cada texto, el reranker recibe siempre como entrada el par completo (consulta, fragmento) y produce una puntuación escalar que indica el grado de relevancia del fragmento respecto a la consulta.
 Esta configuración cross-encoder captura interacciones a nivel de token entre ambas entradas, lo que resulta especialmente útil para discriminar entre fragmentos semánticamente cercanos pero con distinto grado de relevancia real.
 El modelo puede ejecutarse localmente y ofrece soporte para las lenguas del corpus, lo que lo hace adecuado para el prototipo descrito en este trabajo.
-
-\section{Modelo de lenguaje}\label{sec:modelo-lenguaje}
-
-El modelo de lenguaje es el componente encargado de generar la respuesta final a partir de la pregunta del usuario y del contexto recuperado.
-En este proyecto, el pipeline se diseña de forma desacoplada respecto al proveedor concreto del modelo, de manera que sea posible utilizar distintas alternativas sin modificar la arquitectura general del sistema.
-
-Durante el desarrollo del prototipo se prioriza el uso de proveedores compatibles con interfaces de tipo API, lo que facilita alternar entre modelos locales y servicios externos.
-En particular, herramientas como Ollama permiten ejecutar modelos localmente y ofrecen compatibilidad con interfaces similares a la API de OpenAI, lo que simplifica la integración con aplicaciones ya preparadas para este tipo de proveedores \cite{ollamaOpenAICompatibility}.
-De forma complementaria, vLLM se emplea como servidor de inferencia local compatible con la misma interfaz, lo que permite aprovechar aceleración por GPU cuando está disponible \cite{kwon2023efficient}.
-
-El modelo utilizado por defecto en el prototipo para la generación de respuestas es \textit{Qwen2.5-0.5B-Instruct}, un modelo instruccionado de la familia Qwen~2.5, seleccionado por su reducido tamaño (500 millones de parámetros), su capacidad para seguir instrucciones en español e inglés y su compatibilidad con entornos de cómputo limitados \cite{qwen2025}.
-La arquitectura desacoplada del pipeline permite sustituir este modelo por alternativas de mayor capacidad —como Llama, Mistral o modelos propietarios accesibles mediante API— sin modificar el resto de componentes.
-
-Respecto al orquestador, este no utiliza un modelo de lenguaje para tomar decisiones de planificación.
-A diferencia de los marcos de trabajo agénticos basados en el paradigma ReAct \cite{yao2023react}, en los que el modelo de lenguaje razona de forma iterativa sobre herramientas y observaciones, el orquestador implementado sigue una estrategia determinista basada en reglas.
-La clasificación de la intención se realiza mediante la detección de marcadores léxicos predefinidos aplicados sobre el texto de la consulta, sin intervención de ningún componente generativo en la etapa de planificación.
-Esta decisión elimina la latencia y la variabilidad asociadas al uso de un LLM en el bucle de decisión y facilita la interpretación y depuración del comportamiento del orquestador durante la evaluación experimental.
-
-Esta arquitectura permite mantener flexibilidad experimental: los modelos locales favorecen el control del entorno y la reducción de costes, mientras que las APIs externas pueden emplearse en fases concretas si se requiere una mayor calidad de generación.
-Así, el sistema no queda ligado a un único modelo ni a una única tecnología de inferencia.
 
 \section{Interfaz de usuario y observabilidad}\label{sec:ui-observabilidad}
 

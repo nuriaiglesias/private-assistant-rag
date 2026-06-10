@@ -16,17 +16,17 @@ def main() -> None:
 	examples = """\
 Variant mapping examples:
 
-# A: Baseline RAG
-python scripts/cli/ask.py "question"
+# A: Baseline (dense semantic RAG)
+python scripts/query/ask.py "question"
 
-# B: RAG + reranking
-python scripts/cli/ask.py "question" --use-reranking
+# B: Hybrid (dense + BM25 RRF)
+python scripts/query/ask.py "question" --use-hybrid
 
-# C: RAG + orchestrator
-python scripts/cli/ask.py "question" --use-orchestrator
+# C: Hybrid + reranking
+python scripts/query/ask.py "question" --use-hybrid --use-reranking
 
-# D: RAG + reranking + orchestrator
-python scripts/cli/ask.py "question" --use-reranking --use-orchestrator
+# D: Hybrid + reranking + ReAct orchestrator
+python scripts/query/ask.py "question" --use-hybrid --use-reranking --use-orchestrator
 """
 	parser = argparse.ArgumentParser(
 		description="Ask a question to the RAG pipeline",
@@ -36,14 +36,24 @@ python scripts/cli/ask.py "question" --use-reranking --use-orchestrator
 	parser.add_argument("question", help="User question")
 	parser.add_argument("--top-k", type=int, default=5, help="Number of chunks to retrieve")
 	parser.add_argument(
+		"--use-hybrid",
+		action="store_true",
+		help="Enable hybrid retrieval (dense + BM25 RRF) — variant B",
+	)
+	parser.add_argument(
 		"--use-reranking",
 		action="store_true",
-		help="Enable reranking of retrieved chunks",
+		help="Enable cross-encoder reranking of retrieved chunks — variant C when combined with --use-hybrid",
 	)
 	parser.add_argument(
 		"--use-orchestrator",
 		action="store_true",
 		help="Enable orchestrator flow for the pipeline",
+	)
+	parser.add_argument(
+		"--use-query-rewriting",
+		action="store_true",
+		help="Rewrite the question with the LLM before retrieval to improve recall",
 	)
 	args = parser.parse_args()
 
@@ -52,8 +62,10 @@ python scripts/cli/ask.py "question" --use-reranking --use-orchestrator
 	response = pipeline.run_pipeline(
 		args.question,
 		top_k=args.top_k,
+		use_hybrid=args.use_hybrid,
 		use_reranking=args.use_reranking,
 		use_orchestrator=args.use_orchestrator,
+		use_query_rewriting=args.use_query_rewriting,
 	)
 
 	print("Answer:\n")

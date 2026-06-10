@@ -29,12 +29,29 @@ class Reranker:
             return []
 
         pairs = [(query, chunk.text) for chunk in chunks]
-        scores = self._get_model().predict(pairs)
+        scores = self._get_model().predict(pairs, batch_size=4)
         ranked = list(zip(chunks, scores))
         ranked.sort(key=lambda item: item[1], reverse=True)
-        return [chunk for chunk, _ in ranked[:top_k]]
+        return [
+            RetrievedChunk(
+                text=chunk.text,
+                source=chunk.source,
+                chunk_index=chunk.chunk_index,
+                score=chunk.score,
+                title=chunk.title,
+                url=chunk.url,
+                document_id=chunk.document_id,
+                chunk_id=chunk.chunk_id,
+                rerank_score=float(score),
+            )
+            for chunk, score in ranked[:top_k]
+        ]
 
     def _get_model(self) -> CrossEncoder:
         if self._model is None:
-            self._model = CrossEncoder(self._config.reranker_model)
+            import torch
+            self._model = CrossEncoder(
+                self._config.reranker_model,
+                model_kwargs={"dtype": torch.float16},
+            )
         return self._model

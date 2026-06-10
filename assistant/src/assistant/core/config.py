@@ -49,7 +49,7 @@ def load_config() -> AppConfig:
         reranker_model=os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3"),
         rag_min_score=float(os.getenv("RAG_MIN_SCORE", "0.0")),
         rag_candidate_k=int(os.getenv("RAG_CANDIDATE_K", "20")),
-        hybrid_corpus_path=os.getenv("HYBRID_CORPUS_PATH", "data/processed/markdown/unir"),
+        hybrid_corpus_path=os.getenv("HYBRID_CORPUS_PATH", "assistant/corpus/processed_md"),
         hybrid_dense_weight=float(os.getenv("HYBRID_DENSE_WEIGHT", "0.5")),
         hybrid_bm25_weight=float(os.getenv("HYBRID_BM25_WEIGHT", "0.5")),
         phoenix_enabled=os.getenv("PHOENIX_ENABLED", "false").lower() == "true",

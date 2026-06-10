@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Environment
+.env
+
+# Run logs and large result files (keep small curated samples in results/ manually)
+results/pipeline_runs*.jsonl
+results/retrieval_results_*.jsonl
+results/skipped_questions_*.jsonl
+results/logs/
+
+# Models cache
+.cache/
