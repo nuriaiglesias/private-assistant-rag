@@ -18,7 +18,7 @@ class ChunkRecord:
 
 class QdrantVectorStore:
     def __init__(self, url: str, collection: str, vector_size: int) -> None:
-        self._client = QdrantClient(url=url)
+        self._client = (QdrantClient(url=url) if url.startswith("http") else QdrantClient(path=url))
         self._collection = collection
         self._vector_size = vector_size
 
