@@ -125,6 +125,8 @@ def _evaluate_answer_item(
         ],
     }
 
+    result["expected_facts"] = expected_facts
+
     if not answerable:
         result["refusal"] = 1 if is_refusal(response.answer) else 0
         return result
