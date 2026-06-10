@@ -78,7 +78,9 @@ En todas las variantes evaluadas, el número de fragmentos recuperados y proporc
 Para evaluar la calidad de las respuestas se utilizaron métricas orientadas al contenido generado:
 
 \begin{itemize}
-	\item \textbf{Cobertura del \textit{ground truth}}: proporción de hechos esperados del \textit{ground truth} que aparecen cubiertos en la respuesta generada.
+	\item \textbf{Cobertura del \textit{ground truth} (Fact-Coverage)}: proporción de hechos esperados del \textit{ground truth} que aparecen cubiertos en la respuesta generada, medida mediante solapamiento de tokens.
+	\item \textbf{ROUGE-L F1}: mide la subsecuencia común más larga entre la respuesta generada y cada hecho esperado, calculando una media sobre todos los hechos de la pregunta.
+	\item \textbf{BERTScore F1}: mide la similitud semántica entre la respuesta generada y los hechos esperados mediante representaciones contextuales del modelo multilingüe \textit{bert-base-multilingual-cased}, calculando una media sobre todos los hechos de la pregunta.
 	\item \textbf{Tasa de abstención}: proporción de preguntas no respondibles en las que el sistema evita responder sin evidencia suficiente.
 	\item \textbf{Exactitud en la detección de intención de correo}: capacidad del orquestador para identificar solicitudes que requieren activar la herramienta de generación de borradores.
 \end{itemize}
@@ -137,30 +139,34 @@ La variante C (híbrido RRF + reranker \textit{BAAI/bge-reranker-v2-m3}) obtiene
 
 \section{Resultados de calidad de respuesta}\label{sec:resultados-respuesta}
 
-Además de evaluar la recuperación documental, se analizaron las respuestas generadas por el sistema. Esta evaluación permite observar si las mejoras introducidas en la arquitectura se traducen en respuestas más completas, más seguras o más controladas.
+Además de evaluar la recuperación documental, se analizaron las respuestas generadas por las cuatro variantes del \textit{ablation study}. Esta evaluación permite comprobar si las mejoras introducidas en el pipeline de recuperación se traducen en respuestas con mayor cobertura informativa.
 
-La Tabla~\ref{tab:resultados-calidad-respuesta} compara el comportamiento del flujo determinista y del orquestador en tres dimensiones: cobertura del \textit{ground truth}, abstención ante preguntas no respondibles y detección de solicitudes de correo.
+La evaluación se realizó sobre las 61 preguntas respondibles del dataset. Para la variante D (orquestador), la evaluación se restringió a un subconjunto de 25 preguntas respondibles por limitaciones de tiempo de cómputo derivadas del mayor número de llamadas al LLM que requiere el flujo ReAct.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lcc}
+\begin{tabular}{lccccc}
 \toprule
-\textbf{Métrica} & \textbf{A: Determinista} & \textbf{C: Orquestador} \\
+\textbf{Variante} & \textbf{n resp.} & \textbf{Fact-Cov.} & \textbf{$\Delta$} & \textbf{ROUGE-L} & \textbf{BERTScore F1} \\
 \midrule
-Cobertura del \textit{ground truth} & 0.438 & 0.312 \\
-Tasa de abstención en preguntas no respondibles & 0.000 & 1.000 \\
-Exactitud en detección de intención de correo & 0.000 & 0.833 \\
+A: Semántico + LLM               & 61 & 0.389 & --      & 0.093 & 0.643 \\
+B: Híbrido + LLM                 & 61 & 0.496 & +0.107  & 0.094 & 0.641 \\
+C: Híbrido + Reranker + LLM      & 61 & 0.527 & +0.031  & 0.102 & 0.656 \\
+D: Orquestador + Híbrido + Rer.  & 25$^{*}$ & 0.532 & +0.005 & 0.104 & 0.653 \\
 \bottomrule
+\multicolumn{6}{l}{\footnotesize $^{*}$ Evaluada sobre un subconjunto de preguntas respondibles; $\Delta$ respecto a la variante anterior.}
 \end{tabular}
-\caption{Comparativa de calidad de respuesta entre el flujo determinista y el orquestador.}
+\caption{Resultados del \textit{ablation study}: calidad de respuesta sobre preguntas respondibles.}
 \label{tab:resultados-calidad-respuesta}
 \end{table}
 
-Los resultados muestran un comportamiento diferenciado entre ambas variantes. El flujo determinista obtiene una mayor cobertura del \textit{ground truth} en preguntas respondibles, con un valor de 0.438 frente al 0.312 obtenido por el orquestador. Este resultado indica que, en esta configuración, el flujo determinista tiende a producir respuestas más alineadas con los hechos esperados definidos en el dataset.
+Los resultados muestran una progresión consistente a lo largo del \textit{ablation study}. La variante A, con recuperación semántica densa, obtiene una cobertura de hechos esperados de 0.389 y un BERTScore F1 de 0.643. La incorporación de recuperación híbrida en la variante B produce la mejora más notable: la cobertura factual aumenta hasta 0.496 (+0.107, +27,5\,\% relativo), lo que confirma que combinar búsqueda densa y léxica permite recuperar fragmentos más informativos. BERTScore permanece prácticamente igual (0.641), lo que sugiere que la ganancia se concentra en la cobertura léxica de los hechos esperados más que en la similitud semántica global de la respuesta.
 
-Sin embargo, el orquestador mejora de forma clara el comportamiento ante preguntas no respondibles. Mientras que el flujo determinista no se abstiene en este tipo de preguntas, el orquestador alcanza una tasa de abstención de 1.000. Este resultado es especialmente relevante en un asistente institucional, ya que responder sin evidencia suficiente puede producir información incorrecta o poco fiable.
+La variante C añade el reranker multilingüe y produce mejoras simultáneas en las tres métricas: Fact-Coverage sube a 0.527 (+0.031), ROUGE-L a 0.102 (+0.008) y BERTScore a 0.656 (+0.015). La mejora conjunta en las tres métricas indica que el reranker selecciona fragmentos de mayor calidad informativa, no solo léxica, lo que se traduce en respuestas más completas y semánticamente más alineadas con los hechos esperados.
 
-Además, el orquestador permite detectar solicitudes accionables, como la generación de borradores de correo. En esta dimensión alcanza una exactitud de 0.833, frente al 0.000 del flujo determinista, que no incorpora mecanismos de planificación ni activación de herramientas. Por tanto, aunque el orquestador no mejora la cobertura factual en esta evaluación, sí aporta capacidades relevantes de control, abstención y uso de herramientas.
+La variante D (orquestador ReAct con recuperación híbrida y reranking) obtiene la cobertura factual más alta del estudio: 0.532 (+0.005 respecto a C), ROUGE-L de 0.104 y BERTScore de 0.653. El incremento sobre C es marginal, lo que indica que la mayor parte de la ganancia en calidad de respuesta proviene del pipeline de recuperación y no del componente de orquestación. Hay que tener en cuenta, además, que D fue evaluada sobre un subconjunto reducido, lo que limita la comparación directa con las demás variantes.
+
+Respecto al comportamiento ante preguntas no respondibles, las variantes A, B y C fueron evaluadas sobre las 10 preguntas de este tipo presentes en el dataset. Las tasas de abstención obtenidas fueron 0.500\,(A), 0.300\,(B) y 0.400\,(C). Estos valores muestran que el modelo \textit{qwen2.5:7b} presenta una capacidad de abstención innata en los flujos deterministas, a diferencia de modelos de menor capacidad que tienden a generar respuestas en todos los casos. La evaluación funcional del orquestador, descrita en la sección siguiente, muestra además que el flujo ReAct alcanza una tasa de abstención del 100\,\% en su conjunto de prueba específico.
 
 \section{Evaluación funcional del orquestador}\label{sec:evaluacion-funcional-orquestador}
 
@@ -194,13 +200,13 @@ Los resultados obtenidos permiten extraer varias conclusiones relevantes sobre e
 
 En primer lugar, la incorporación de recuperación híbrida y reranking mejora el rendimiento del sistema en las métricas de recuperación. La variante B (híbrido RRF) muestra que la fusión léxico-semántica amplía la cobertura en el top-3: Hit@3 pasa de 0.852 a 0.902 (+0.050) respecto a A, aunque Hit@1 desciende ligeramente ($-$0.049) y MRR se mantiene prácticamente igual ($-$0.006). Este patrón indica que BM25 introduce candidatos léxicamente relevantes que mejoran la presencia de la fuente esperada en posiciones intermedias, pero no siempre en primera posición. La variante C (híbrido RRF + reranker \textit{BAAI/bge-reranker-v2-m3}) obtiene Hit@1 = 0.557 ($-$0.017 respecto a A), Hit@3 = 0.918 (+0.066) y MRR = 0.738 (+0.026). El reranker multilingüe reordena el pool híbrido de forma más precisa: Hit@3 alcanza su valor máximo y MRR supera al baseline, confirmando que el modelo \textit{cross-encoder} aporta una discriminación adicional que no ofrece ni la búsqueda semántica ni la léxica por separado.
 
-En segundo lugar, el orquestador no mejora la cobertura del \textit{ground truth} respecto al flujo determinista en la configuración evaluada. Este resultado puede explicarse por varios factores. Por un lado, el orquestador adopta un comportamiento más conservador, especialmente cuando la evidencia recuperada no es suficientemente clara. Por otro lado, la métrica de cobertura del \textit{ground truth} depende de la coincidencia entre la respuesta generada y un conjunto concreto de hechos definidos previamente, por lo que puede penalizar respuestas correctas formuladas de manera más general o prudente. Además, el modelo generativo empleado es de tamaño reducido y los prompts del orquestador no han sido objeto de un ajuste sistemático, lo que puede introducir variabilidad en la cobertura factual con independencia del componente de recuperación. Ajustar los prompts y explorar modelos generativos de mayor capacidad son líneas de mejora directas para incrementar esta métrica en iteraciones futuras.
+En segundo lugar, la variante D (orquestador) obtiene la cobertura factual más alta del estudio (0.532), aunque la diferencia respecto a la variante C (0.527) es marginal (+0.005). Este resultado indica que la mayor parte de la ganancia en calidad de respuesta proviene del pipeline de recuperación híbrido con reranking, y que el orquestador no añade una mejora sustancial en cobertura factual cuando el retriever ya proporciona evidencia de buena calidad. La métrica de cobertura factual, basada en solapamiento de tokens, puede además penalizar respuestas formuladas de manera más elaborada o estructurada, como las que tiende a generar el flujo ReAct.
 
-En tercer lugar, el orquestador sí aporta mejoras claras en dimensiones que no quedan reflejadas únicamente mediante métricas clásicas de recuperación. Su capacidad para abstenerse ante preguntas no respondibles reduce el riesgo de generar respuestas no fundamentadas. Asimismo, la detección de solicitudes de correo demuestra que la arquitectura puede extenderse hacia funcionalidades accionables, manteniendo un flujo controlado y trazable.
+En tercer lugar, el orquestador aporta mejoras claras en dimensiones que van más allá de la cobertura factual. Su capacidad para abstenerse ante preguntas no respondibles de forma sistemática reduce el riesgo de generar respuestas no fundamentadas. Asimismo, la detección de solicitudes de correo (0.833 de exactitud) demuestra que la arquitectura puede extenderse hacia funcionalidades accionables, manteniendo un flujo controlado y trazable. Por otro lado, cabe destacar que el modelo \textit{qwen2.5:7b} presenta cierta capacidad de abstención innata incluso en los flujos deterministas (A: 0.500, B: 0.300, C: 0.400), lo que sugiere que modelos de mayor capacidad pueden mejorar el comportamiento de abstención con independencia del componente de orquestación.
 
-En conjunto, los resultados sugieren que las mejoras sobre el recuperador tienen un impacto directo en la calidad de la evidencia recuperada, mientras que el orquestador aporta valor principalmente en términos de control del flujo, seguridad de la respuesta y extensibilidad funcional. Por tanto, ambas líneas de mejora son complementarias: el reranking contribuye a recuperar mejor información, mientras que el orquestador permite decidir cómo utilizarla.
+En conjunto, los resultados muestran que las mejoras sobre el recuperador tienen un impacto directo y medible en la calidad de las respuestas generadas: la cobertura factual pasa de 0.389 (variante A) a 0.527 (variante C), una mejora del 35,5\,\% que se confirma también en ROUGE-L y BERTScore. El orquestador aporta valor principalmente en términos de control del flujo, abstención sistemática ante preguntas no respondibles y activación de capacidades accionables, con una ganancia marginal adicional en cobertura factual (+0.005 sobre C).
 
-Por tanto, los resultados deben interpretarse desde la contribución global de la arquitectura: la mejora del retrieval incrementa la calidad de la evidencia disponible, mientras que la orquestación permite controlar cómo se utiliza dicha evidencia y cuándo debe activarse una capacidad accionable. La aportación principal no reside en un único componente aislado, sino en la integración modular y trazable de estos elementos dentro de un asistente institucional supervisado.
+Los resultados deben interpretarse desde la contribución global de la arquitectura: la mejora del retrieval incrementa la calidad de la evidencia disponible, el reranker selecciona los fragmentos más informativos de un pool de candidatos más diverso, y la orquestación permite controlar cómo se utiliza dicha evidencia y cuándo debe activarse una capacidad accionable. La aportación principal no reside en un único componente aislado, sino en la integración modular y trazable de estos elementos dentro de un asistente institucional supervisado.
 
 \section{Limitaciones de la evaluación}\label{sec:limitaciones-evaluacion}
 
@@ -214,6 +220,10 @@ Finalmente, la evaluación funcional del orquestador permite comprobar que los f
 
 \section{Síntesis de resultados}\label{sec:sintesis-resultados}
 
-A modo de síntesis, los experimentos realizados muestran que la variante C (híbrido RRF + reranker) es la mejor configuración global para recuperación: obtiene el Hit@3 más alto (0.918, +0.066 respecto a A) y la MRR más alta (0.738, +0.026 respecto a A). El \textit{ablation study} revela que ambos componentes contribuyen de forma diferenciada y complementaria: la variante B (híbrido RRF sin reranker) mejora principalmente la cobertura en el top-3 (Hit@3 +0.050), mientras que la variante C añade el reranker multilingüe que no solo amplía la cobertura sino que también mejora la calidad del ranking (MRR +0.026 sobre A). Hit@1 desciende ligeramente en B y C respecto a A, lo que sugiere que el pool de candidatos ampliado por BM25 puede introducir ruido en la primera posición que el reranker no siempre compensa completamente.
+A modo de síntesis, los experimentos realizados muestran resultados coherentes y progresivos en ambas dimensiones evaluadas: recuperación y calidad de respuesta.
 
-Por otro lado, la comparación entre el flujo determinista y el orquestador muestra que el segundo no incrementa la cobertura del \textit{ground truth} en esta configuración, pero sí mejora de forma notable la abstención ante preguntas no respondibles y permite incorporar capacidades accionables. Estos resultados respaldan la utilidad de una arquitectura modular, en la que las mejoras de recuperación y las capacidades de orquestación cumplen funciones distintas pero complementarias dentro del asistente institucional.
+En recuperación, la variante C (híbrido RRF + reranker) es la mejor configuración: obtiene el Hit@3 más alto (0.918, +0.066 respecto a A) y la MRR más alta (0.738, +0.026 respecto a A). El \textit{ablation study} revela que ambos componentes contribuyen de forma diferenciada: la variante B mejora principalmente la cobertura en el top-3 (Hit@3 +0.050), mientras que el reranker multilingüe de la variante C eleva además la calidad del ranking (MRR +0.026). Hit@1 desciende ligeramente en B y C respecto a A, lo que sugiere que el pool ampliado por BM25 puede introducir ruido en la primera posición que el reranker no siempre compensa por completo.
+
+En calidad de respuesta, el \textit{ablation study} muestra una progresión consistente: A\,(0.389) $\to$ B\,(0.496, +27,5\,\%) $\to$ C\,(0.527, +6,3\,\%) $\to$ D\,(0.532, +0,9\,\%). La mayor ganancia corresponde a la incorporación de recuperación híbrida (A$\to$B), mientras que el reranker añade una mejora adicional apreciable en las tres métricas (Fact-Coverage, ROUGE-L y BERTScore). La variante D (orquestador) alcanza la cobertura factual más alta (0.532) y el mejor ROUGE-L (0.104), aunque la diferencia sobre C es marginal y la comparación está limitada por el menor número de preguntas evaluadas.
+
+En conjunto, los resultados respaldan la utilidad de la arquitectura modular propuesta: las mejoras del recuperador incrementan directamente la calidad de la evidencia disponible, el reranker selecciona los fragmentos más relevantes de un pool de candidatos más diverso, y el orquestador aporta capacidades complementarias de control del flujo, abstención sistemática ante preguntas no respondibles y activación de herramientas accionables. Cada componente cumple una función diferenciada, y su combinación produce el sistema de mayor calidad evaluado en este trabajo.
