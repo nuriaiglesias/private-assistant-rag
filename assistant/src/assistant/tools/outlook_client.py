@@ -25,7 +25,7 @@ import requests
 log = logging.getLogger(__name__)
 
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
-SCOPES = ["Mail.ReadWrite", "offline_access"]
+SCOPES = ["Mail.Send"]
 
 
 class OutlookAuthError(RuntimeError):
@@ -130,6 +130,36 @@ class OutlookClient:
             "message_id": data.get("id"),
             "web_link": data.get("webLink"),
         }
+
+    def send_message(
+        self,
+        subject: str,
+        body: str,
+        to: str,
+    ) -> dict[str, Any]:
+        """Send an email immediately via Microsoft Graph sendMail endpoint."""
+        token = self.get_access_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        payload: dict[str, Any] = {
+            "message": {
+                "subject": subject,
+                "body": {"contentType": "Text", "content": body},
+                "toRecipients": [{"emailAddress": {"address": to}}],
+            },
+            "saveToSentItems": "true",
+        }
+        response = requests.post(
+            f"{GRAPH_BASE}/me/sendMail",
+            headers=headers,
+            json=payload,
+            timeout=15,
+        )
+        response.raise_for_status()
+        log.info("Email sent to %s", to)
+        return {"status": "sent", "to": to}
 
     # ------------------------------------------------------------------
     # Internal helpers

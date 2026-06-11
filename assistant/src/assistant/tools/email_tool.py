@@ -36,6 +36,7 @@ class EmailTool:
         self._outlook_cache = os.environ.get(
             "OUTLOOK_TOKEN_CACHE", ".outlook_token_cache"
         )
+        self._send_directly = os.environ.get("OUTLOOK_SEND_DIRECTLY", "false").lower() == "true"
 
     # ------------------------------------------------------------------
     # Public API
@@ -58,15 +59,16 @@ class EmailTool:
         )
 
         if self._outlook_enabled():
-            draft = self._save_to_outlook(draft)
+            if self._send_directly and draft.to:
+                draft = self._send_via_outlook(draft)
+            else:
+                draft = self._save_to_outlook(draft)
 
         return draft
 
     def send_email(self, draft: EmailDraft, confirmed: bool = False) -> dict[str, str]:
-        """
-        Sending is intentionally not supported — drafts are saved to Outlook
-        for the user to review and send manually.
-        """
+        if draft.status == "sent":
+            return {"status": "sent", "reason": "Email enviado correctamente."}
         if not confirmed:
             return {
                 "status": "not_sent",
@@ -106,18 +108,14 @@ class EmailTool:
 
     def _save_to_outlook(self, draft: EmailDraft) -> EmailDraft:
         try:
-            from assistant.tools.outlook_client import OutlookClient, OutlookAuthError
+            from assistant.tools.outlook_client import OutlookClient
 
             client = OutlookClient(
                 client_id=self._outlook_client_id,
                 tenant_id=self._outlook_tenant_id,
                 token_cache_path=self._outlook_cache,
             )
-            result = client.save_draft(
-                subject=draft.subject,
-                body=draft.body,
-                to=draft.to,
-            )
+            result = client.save_draft(subject=draft.subject, body=draft.body, to=draft.to)
             return EmailDraft(
                 to=draft.to,
                 subject=draft.subject,
@@ -129,4 +127,25 @@ class EmailTool:
             )
         except Exception as exc:
             log.warning("Could not save draft to Outlook: %s", exc)
+            return draft
+
+    def _send_via_outlook(self, draft: EmailDraft) -> EmailDraft:
+        try:
+            from assistant.tools.outlook_client import OutlookClient
+
+            client = OutlookClient(
+                client_id=self._outlook_client_id,
+                tenant_id=self._outlook_tenant_id,
+                token_cache_path=self._outlook_cache,
+            )
+            client.send_message(subject=draft.subject, body=draft.body, to=draft.to)
+            return EmailDraft(
+                to=draft.to,
+                subject=draft.subject,
+                body=draft.body,
+                requires_confirmation=False,
+                status="sent",
+            )
+        except Exception as exc:
+            log.warning("Could not send email via Outlook: %s", exc)
             return draft
