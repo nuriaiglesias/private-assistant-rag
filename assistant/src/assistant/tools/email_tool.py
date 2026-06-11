@@ -37,6 +37,7 @@ class EmailTool:
             "OUTLOOK_TOKEN_CACHE", ".outlook_token_cache"
         )
         self._send_directly = os.environ.get("OUTLOOK_SEND_DIRECTLY", "false").lower() == "true"
+        self._default_to = os.environ.get("OUTLOOK_DEFAULT_TO", "")
 
     # ------------------------------------------------------------------
     # Public API
@@ -50,8 +51,9 @@ class EmailTool:
     ) -> EmailDraft:
         """Build an EmailDraft and, if Outlook is configured, save it remotely."""
         subject, body = self._build_subject_and_body(user_request, supporting_context)
+        resolved_to = to or self._default_to or None
         draft = EmailDraft(
-            to=to,
+            to=resolved_to,
             subject=subject,
             body=body,
             requires_confirmation=True,
