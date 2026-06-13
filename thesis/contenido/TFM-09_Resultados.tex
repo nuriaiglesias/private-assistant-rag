@@ -125,7 +125,9 @@ En esta sección se comparan los resultados obtenidos por las variantes A, B y C
 A: Semántico + LLM & 0.574 & -- & 0.852 & -- & 0.712 & -- \\
 B: Híbrido (RRF) + LLM & 0.525 & $-$0.049 & 0.902 & +0.050 & 0.706 & $-$0.006 \\
 C: Híbrido (RRF) + Reranker + LLM & 0.557 & $-$0.017 & 0.918 & +0.066 & 0.738 & +0.026 \\
+D: Orquestador + Híbrido + Reranker$^*$ & 0.557 & $-$0.017 & 0.918 & +0.066 & 0.738 & +0.026 \\
 \bottomrule
+\multicolumn{7}{l}{\footnotesize $^*$ La variante D emplea el mismo retriever que C (híbrido RRF + reranker); los valores de recuperación son idénticos.}
 \end{tabular}
 \caption{Resultados de recuperación del \textit{ablation study}.}
 \label{tab:resultados-recuperacion}
@@ -219,7 +221,9 @@ La Tabla~\ref{tab:xquad-retrieval} muestra los resultados de recuperación de la
 A: Semántico           & 0.930 & --       & 0.978 & --       & 0.956 & -- \\
 B: Híbrido (RRF)       & 0.921 & $-$0.009 & 0.984 & +0.006   & 0.953 & $-$0.003 \\
 C: Híbrido + Reranker  & 0.984 & +0.054   & 0.999 & +0.021   & 0.991 & +0.035 \\
+D: Orquestador + Híbrido + Reranker$^*$ & 0.984 & +0.054 & 0.999 & +0.021 & 0.991 & +0.035 \\
 \bottomrule
+\multicolumn{7}{l}{\footnotesize $^*$ La variante D emplea el mismo retriever que C (híbrido RRF + reranker); los valores de recuperación son idénticos.}
 \end{tabular}
 \caption{Resultados de recuperación sobre XQuAD-es (1.190 preguntas, 240 contextos únicos).}
 \label{tab:xquad-retrieval}
