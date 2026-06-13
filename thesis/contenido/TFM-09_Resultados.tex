@@ -233,9 +233,9 @@ El patrón es idéntico al observado en la evaluación interna: C obtiene los me
 
 Los valores absolutos son más elevados que en la evaluación interna, lo que obedece a dos factores: el corpus XQuAD es reducido (240 pasajes) y las preguntas fueron diseñadas explícitamente a partir de esos mismos pasajes, lo que maximiza la alineación semántica entre pregunta y documento. Estas condiciones difieren del escenario real de UNIR, donde el corpus es más heterogéneo y las consultas de los usuarios no guardan la misma relación con los documentos.
 
-\subsection{Resultado de generación: variante D}\label{subsec:xquad-resultados-d}
+\subsection{Resultados de generación}\label{subsec:xquad-resultados-generacion}
 
-La Tabla~\ref{tab:xquad-generation} recoge los resultados de la variante D (orquestador ReAct con recuperación híbrida y reranking) evaluada sobre el corpus XQuAD temporal.
+La Tabla~\ref{tab:xquad-generation} recoge los resultados de calidad de respuesta de las cuatro variantes evaluadas sobre el corpus XQuAD temporal (25 preguntas por variante).
 
 \begin{table}[H]
 \centering
@@ -243,14 +243,21 @@ La Tabla~\ref{tab:xquad-generation} recoge los resultados de la variante D (orqu
 \toprule
 \textbf{Variante} & \textbf{n} & \textbf{Fact-Coverage} & \textbf{ROUGE-L F1} & \textbf{BERTScore F1} \\
 \midrule
+A: Semántico + LLM                  & 25 & 0.280 & 0.075 & 0.574 \\
+B: Híbrido (RRF) + LLM              & 25 & 0.280 & 0.072 & 0.575 \\
+C: Híbrido + Reranker + LLM         & 25 & 0.200 & 0.055 & 0.563 \\
 D: Orquestador + Híbrido + Reranker & 25 & 0.160 & 0.046 & 0.568 \\
 \bottomrule
 \end{tabular}
-\caption{Resultado de generación de la variante D sobre XQuAD-es (corpus XQuAD temporal, 25 preguntas).}
+\caption{Resultados de generación sobre XQuAD-es (corpus XQuAD temporal, 25 preguntas por variante).}
 \label{tab:xquad-generation}
 \end{table}
 
-La cobertura factual de 0.160 es inferior a la obtenida en la evaluación interna (0.532). Esta diferencia responde principalmente a la naturaleza de los hechos esperados: en XQuAD los \textit{expected facts} son respuestas extractivas cortas —fragmentos literales del texto de Wikipedia— mientras que en el corpus de UNIR corresponden a frases descriptivas más largas. La métrica de solapamiento de tokens penaliza respuestas abstractivas: el orquestador genera respuestas en lenguaje natural que pueden ser correctas semánticamente, pero que no coinciden léxicamente con un \textit{span} breve y preciso. Esta limitación de la cobertura factual es la razón por la que se incluyó también BERTScore en esta evaluación: al medir similitud semántica mediante representaciones contextuales en lugar de solapamiento exacto de tokens, BERTScore ofrece una estimación más justa de la calidad de respuesta ante hechos esperados extractivos cortos. El BERTScore F1 obtenido para la variante D sobre XQuAD-es es de \textbf{0.568}, un valor que contrasta con el 0.160 de cobertura factual y confirma que el orquestador genera respuestas semánticamente correctas aunque no coincidan léxicamente con los \textit{spans} extractivos del benchmark.
+El primer resultado destacable es que el \textbf{BERTScore F1 es muy estable en todas las variantes} (0.563–0.575), lo que indica que la calidad semántica de las respuestas generadas no varía significativamente entre configuraciones. Esta estabilidad es coherente con la naturaleza de XQuAD: el corpus es reducido (240 pasajes únicos) y cualquier variante que recupere el pasaje correcto —algo que ocurre con alta probabilidad dadas las métricas de recuperación— genera una respuesta semánticamente equivalente.
+
+La cobertura factual y ROUGE-L muestran un patrón diferente al observado en la evaluación interna. A y B obtienen la misma Fact-Coverage (0.280), mientras que C desciende a 0.200 y D a 0.160. Esto se debe a la interacción entre la segmentación del corpus y la naturaleza extractiva de los \textit{expected facts}: los 240 pasajes XQuAD se fragmentan en 502 chunks durante la ingesta, y el reranker de la variante C selecciona sub-fragmentos semánticamente relevantes que pueden no contener el \textit{span} exacto de la respuesta esperada. La métrica de solapamiento de tokens penaliza esta selección aunque el contenido recuperado sea factualmente correcto. En la variante D, el orquestador ReAct genera además respuestas en lenguaje natural —más completas y elaboradas— que divergen léxicamente de los \textit{spans} cortos y precisos que constituyen los \textit{expected facts} de XQuAD.
+
+BERTScore, al medir similitud semántica mediante representaciones contextuales en lugar de solapamiento exacto de tokens, es la métrica más adecuada en este contexto. Los valores obtenidos (0.563–0.575) confirman que todas las variantes generan respuestas de calidad semántica equivalente, y que las diferencias en Fact-Coverage son un artefacto de la métrica y no una degradación real de la calidad de respuesta.
 
 \subsection{Comparación con la evaluación interna}\label{subsec:xquad-comparacion}
 
@@ -291,7 +298,7 @@ En conjunto, los resultados muestran que las mejoras sobre el recuperador tienen
 
 Los resultados deben interpretarse desde la contribución global de la arquitectura: la mejora del retrieval incrementa la calidad de la evidencia disponible, el reranker selecciona los fragmentos más informativos de un pool de candidatos más diverso, y la orquestación permite controlar cómo se utiliza dicha evidencia y cuándo debe activarse una capacidad accionable. La aportación principal no reside en un único componente aislado, sino en la integración modular y trazable de estos elementos dentro de un asistente institucional supervisado.
 
-Finalmente, la evaluación sobre XQuAD-es refuerza las conclusiones anteriores desde una perspectiva de generalización. El ordenamiento de variantes se reproduce fielmente en un corpus de dominio diferente: C sigue siendo la configuración de recuperación más robusta (Hit@1 = 0.984, MRR = 0.991), y B continúa mostrando el mismo patrón de mayor diversidad en el top-3 a costa de precisión en la primera posición. La reducción en la cobertura factual de la variante D sobre XQuAD (0.160 frente a 0.532 en UNIR) no indica un fallo del sistema, sino que refleja la diferencia entre hechos esperados extractivos cortos —característicos de los benchmarks de comprensión lectora— y hechos descriptivos de mayor longitud —propios del dominio institucional evaluado—. BERTScore, al capturar similitud semántica en lugar de solapamiento léxico, es la métrica más adecuada para comparar el rendimiento del sistema entre ambas evaluaciones. El BERTScore F1 de 0.568 obtenido para la variante D sobre XQuAD-es, frente a 0.160 de cobertura factual, evidencia que la brecha observada es un artefacto de la métrica de solapamiento y no una degradación real de la calidad de respuesta del orquestador.
+Finalmente, la evaluación sobre XQuAD-es refuerza las conclusiones anteriores desde una perspectiva de generalización. El ordenamiento de variantes se reproduce fielmente en un corpus de dominio diferente: C sigue siendo la configuración de recuperación más robusta (Hit@1 = 0.984, MRR = 0.991), y B continúa mostrando el mismo patrón de mayor diversidad en el top-3 a costa de precisión en la primera posición. En cuanto a la calidad de respuesta, el BERTScore es muy estable en todas las variantes (0.563–0.575), lo que confirma que la calidad semántica de las respuestas generadas es equivalente independientemente del método de recuperación empleado. Las diferencias en Fact-Coverage entre variantes en XQuAD son un artefacto de la naturaleza extractiva de los \textit{expected facts} del benchmark y de la segmentación del corpus en chunks, no una diferencia real de calidad de respuesta. BERTScore, al capturar similitud semántica en lugar de solapamiento léxico, es la métrica más adecuada para comparar el rendimiento del sistema entre ambas evaluaciones.
 
 \section{Limitaciones de la evaluación}\label{sec:limitaciones-evaluacion}
 
@@ -313,4 +320,4 @@ En calidad de respuesta, el \textit{ablation study} muestra una progresión cons
 
 En conjunto, los resultados respaldan la utilidad de la arquitectura modular propuesta: las mejoras del recuperador incrementan directamente la calidad de la evidencia disponible, el reranker selecciona los fragmentos más relevantes de un pool de candidatos más diverso, y el orquestador aporta capacidades complementarias de control del flujo, abstención sistemática ante preguntas no respondibles y activación de herramientas accionables. Cada componente cumple una función diferenciada, y su combinación produce el sistema de mayor calidad evaluado en este trabajo.
 
-La evaluación complementaria sobre XQuAD-es (1.190 preguntas, 240 contextos únicos) confirma que el comportamiento del sistema se generaliza más allá del corpus de UNIR. Los resultados de recuperación de las variantes A, B y C reproducen el mismo ordenamiento observado en la evaluación interna —C $>$ A $>$ B en Hit@1 y C $>$ B $>$ A en Hit@3— con MRR de 0.991 para la variante C sobre un corpus de dominio distinto. Esta consistencia valida que la arquitectura no está sobreajustada al dominio institucional, y que el componente de reranking aporta una mejora robusta y transferible.
+La evaluación complementaria sobre XQuAD-es (1.190 preguntas, 240 contextos únicos) confirma que el comportamiento del sistema se generaliza más allá del corpus de UNIR. Los resultados de recuperación reproducen el mismo ordenamiento observado en la evaluación interna —C $>$ A $>$ B en Hit@1 y C $>$ B $>$ A en Hit@3— con MRR de 0.991 para la variante C sobre un corpus de dominio distinto. En cuanto a la calidad de respuesta, el BERTScore es estable en todas las variantes (0.563–0.575), lo que indica que todas generan respuestas semánticamente equivalentes cuando el corpus es pequeño y bien alineado con las preguntas. Esta consistencia valida que la arquitectura no está sobreajustada al dominio institucional y que sus componentes muestran un comportamiento coherente y generalizable.
