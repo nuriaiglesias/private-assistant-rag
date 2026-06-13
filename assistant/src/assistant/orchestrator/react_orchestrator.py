@@ -33,26 +33,32 @@ _MAX_ITERATIONS = 5
 
 _SYSTEM_PROMPT = """\
 Eres un asistente universitario especializado en información de UNIR.
-Respondes preguntas usando ÚNICAMENTE evidencia del corpus documental disponible.
 
 Herramientas disponibles:
-  buscar(consulta)       - Recupera fragmentos relevantes del corpus.
-  rechazar()             - Indica que no hay evidencia suficiente para responder.
-  redactar_correo(ctx)   - Genera un borrador de correo con el contexto indicado.
-  responder()            - Señala que ya tienes evidencia suficiente para responder.
+  buscar(consulta)       - Recupera fragmentos del corpus documental de UNIR.
+  redactar_correo(ctx)   - Redacta y envía un correo formal. Úsala cuando el usuario pida enviar o redactar un correo.
+  responder()            - Finaliza indicando que tienes evidencia suficiente.
+  rechazar()             - Solo si la búsqueda no encontró evidencia Y no es solicitud de correo.
 
 Formato obligatorio en CADA paso:
-  Pensamiento: [razonamiento breve sobre qué hacer]
+  Pensamiento: [razonamiento breve]
   Herramienta: [nombre_herramienta]
-  Entrada: [argumento, o "ninguna" si no aplica]
+  Entrada: [argumento, o "ninguna"]
 
-Reglas:
-  - Llama a "buscar" al menos UNA vez antes de "responder" o "rechazar".
-  - Si la pregunta pide redactar un correo, llama a "redactar_correo".
-  - Llama a "rechazar" si la búsqueda no devuelve evidencia útil.
-  - Llama a "responder" cuando tengas evidencia suficiente.
-  - Máximo {max_iter} pasos en total.
+REGLAS — léelas antes de responder:
+  REGLA 1 (CORREO): Si la pregunta menciona "correo", "email", "enviar", "redactar" o "escribir",
+    llama DIRECTAMENTE a "redactar_correo". No llames a "buscar" antes.
+  REGLA 2 (BUSCAR): Para preguntas informativas sobre UNIR, llama a "buscar" primero.
+  REGLA 3 (RESPONDER): Llama a "responder" cuando tengas evidencia suficiente del corpus.
+  REGLA 4 (RECHAZAR): Llama a "rechazar" ÚNICAMENTE si "buscar" no encontró nada útil.
+  REGLA 5: Máximo {max_iter} pasos en total.
+
+Ejemplos:
+  - "quiero enviar un correo" → redactar_correo
+  - "redacta un email para secretaría" → redactar_correo
+  - "¿qué becas ofrece UNIR?" → buscar
 """
+
 
 
 def _parse_step(raw: str) -> tuple[str, str, str]:
@@ -235,13 +241,34 @@ class ReactOrchestrator:
                     user_request=question,
                     supporting_context=context,
                 )
-                observation = f"Borrador listo. Asunto: {email_draft.subject}"
-                tc.tool_output_summary = "email draft created"
-                messages.append(
-                    ChatMessage(role="user", content=f"Observación: {observation}")
+                tc.tool_output_summary = f"email {email_draft.status}"
+
+                if email_draft.status == "sent":
+                    to_str = f" a {email_draft.to}" if email_draft.to else ""
+                    answer = (
+                        f"He enviado un correo formal{to_str} "
+                        f"con el asunto «{email_draft.subject}»."
+                    )
+                elif email_draft.status.startswith("draft"):
+                    answer = (
+                        f"He generado un borrador de correo con el asunto "
+                        f"«{email_draft.subject}». Puedes revisarlo y enviarlo cuando estés listo."
+                    )
+                else:
+                    answer = f"Borrador de correo preparado: «{email_draft.subject}»."
+
+                return OrchestratorResult(
+                    question=question,
+                    plan=None,
+                    retrieved_chunks=all_chunks,
+                    final_chunks=all_chunks,
+                    answer=answer,
+                    refused=False,
+                    evidence_sufficient=True,
+                    token_usage=token_usage,
+                    email_draft=email_draft,
+                    tool_calls=tool_calls,
                 )
-                # After drafting the email we still let the loop call "responder"
-                continue
 
             # ── unknown / malformed ─────────────────────────────────────────
             observation = (

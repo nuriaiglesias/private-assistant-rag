@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import asdict
-from datetime import datetime
-import json
-from pathlib import Path
 import sys
+from dataclasses import asdict
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -15,330 +13,322 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from assistant.core.config import load_config
-from assistant.rag.pipeline import RagPipeline
+
+# ── Constants ──────────────────────────────────────────────────────────────
+
+VARIANTS: dict[str, tuple[bool, bool, bool, bool]] = {
+    "D — Orquestador ReAct": (False, True, True, True),
+    "C — Híbrido + Reranker": (False, True, True, False),
+    "B — Híbrido (RRF)": (False, True, False, False),
+    "A — Semántico": (False, False, False, False),
+}
+
+QUICK_PROMPTS = [
+    ("Matrícula", "¿Cuáles son los plazos y requisitos de matrícula en UNIR?"),
+    ("Becas", "¿Qué tipos de becas ofrece UNIR y cómo se solicitan?"),
+    ("TFM", "¿Cuáles son los requisitos para entregar el TFM en el Máster de IA?"),
+    ("Correo", "Redacta un correo para secretaría preguntando sobre los plazos de matrícula."),
+]
+
+USER_AVATAR = "👤"
+ASSISTANT_AVATAR = "🎓"
+
+# ── Pipeline ───────────────────────────────────────────────────────────────
 
 
-@st.cache_resource
-def _get_pipeline() -> RagPipeline:
+@st.cache_resource(show_spinner="Iniciando pipeline RAG…")
+def _get_pipeline():
+    from assistant.rag.pipeline import RagPipeline
     config = load_config()
     return RagPipeline(config)
 
 
-def _load_styles() -> str:
-    style_path = Path(__file__).resolve().parent / "styles.css"
-    return style_path.read_text(encoding="utf-8")
+# ── Utilities ──────────────────────────────────────────────────────────────
 
 
-def _inject_styles() -> None:
-    st.markdown(f"<style>{_load_styles()}</style>", unsafe_allow_html=True)
-
-
-def _variant_to_flags(variant: str, orchestrator_rerank: bool) -> tuple[bool, bool, bool, bool]:
-    if variant == "A_semantic_llm":
-        # Baseline: dense semantic retrieval + LLM generation.
-        return False, False, False, False
-    if variant == "B_hybrid_llm":
-        return False, True, False, False
-    if variant == "C_hybrid_rerank_llm":
-        return False, True, True, False
-    return False, True, orchestrator_rerank, True
-
-
-def _safe_get(url: str, timeout: float = 1.4) -> bool:
+def _safe_get(url: str, timeout: float = 1.5) -> bool:
     try:
-        response = requests.get(url, timeout=timeout)
-        return response.status_code < 500
-    except requests.RequestException:
+        return requests.get(url, timeout=timeout).status_code < 500
+    except Exception:
         return False
 
 
-def _service_status(config) -> list[tuple[str, bool, str]]:
-    statuses: list[tuple[str, bool, str]] = []
-
-    qdrant_ok = _safe_get(f"{config.qdrant_url}/collections")
-    statuses.append(("Qdrant", qdrant_ok, f"{config.qdrant_url}/collections"))
-
-    if config.llm_provider.lower() == "ollama":
-        llm_ok = _safe_get(f"{config.llm_base_url}/api/tags")
-        statuses.append(("Ollama", llm_ok, f"{config.llm_base_url}/api/tags"))
-    else:
-        llm_ok = _safe_get(config.llm_base_url)
-        statuses.append((config.llm_provider.upper(), llm_ok, config.llm_base_url))
-
-    phoenix_url = _get_phoenix_url(config)
-    phoenix_ok = _safe_get(phoenix_url)
-    statuses.append(("Phoenix UI", phoenix_ok, phoenix_url))
-
-    return statuses
+def _inject_css() -> None:
+    css_path = Path(__file__).resolve().parent / "styles.css"
+    if css_path.exists():
+        st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 
-def _get_phoenix_url(config) -> str:
-    return f"http://{config.phoenix_host}:{config.phoenix_ui_port}"
+# ── Sidebar ────────────────────────────────────────────────────────────────
 
 
-def _render_status_badge(name: str, is_ok: bool, url: str) -> None:
-    dot_class = "dot-ok" if is_ok else "dot-bad"
-    label = "up" if is_ok else "down"
+def _sidebar(config: Any) -> tuple[str, int]:
+    with st.sidebar:
+        st.markdown(
+            """
+            <div class="sb-brand">
+                <span class="sb-icon">🎓</span>
+                <div>
+                    <div class="sb-title">Asistente UNIR</div>
+                    <div class="sb-sub">RAG · Híbrido · Orquestador ReAct</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="sb-label">Variante del pipeline</div>', unsafe_allow_html=True)
+        variant = st.radio(
+            "variant_radio",
+            options=list(VARIANTS.keys()),
+            index=1,  # default: C — Híbrido + Reranker (works well on laptop)
+            label_visibility="collapsed",
+        )
+
+        st.markdown('<div class="sb-label">Fragmentos recuperados (k)</div>', unsafe_allow_html=True)
+        top_k = st.slider(
+            "top_k_slider", min_value=1, max_value=12, value=5, label_visibility="collapsed"
+        )
+
+        st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="sb-label">Ejemplos rápidos</div>', unsafe_allow_html=True)
+        for label, prompt in QUICK_PROMPTS:
+            if st.button(label, use_container_width=True, key=f"qp_{label}"):
+                st.session_state["_pending"] = prompt
+
+        st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="sb-label">Estado de servicios</div>', unsafe_allow_html=True)
+        _service_status(config)
+
+        st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+
+        if st.button("🗑  Nueva conversación", use_container_width=True, key="clear_btn"):
+            st.session_state["messages"] = []
+            st.session_state["meta"] = {}
+            st.rerun()
+
+    return variant, top_k
+
+
+def _service_status(config: Any) -> None:
+    checks = []
+    if hasattr(config, "qdrant_url") and config.qdrant_url.startswith("http"):
+        checks.append(("Qdrant", f"{config.qdrant_url}/collections"))
+    if hasattr(config, "llm_provider") and config.llm_provider.lower() == "ollama":
+        checks.append(("Ollama", f"{config.llm_base_url}/api/tags"))
+    if hasattr(config, "phoenix_enabled") and config.phoenix_enabled:
+        phoenix_url = f"http://{config.phoenix_host}:{getattr(config, 'phoenix_ui_port', 6006)}"
+        checks.append(("Phoenix", phoenix_url))
+
+    for name, url in checks:
+        ok = _safe_get(url)
+        dot = "🟢" if ok else "🔴"
+        st.markdown(
+            f'<span>{dot}</span> <span style="font-size:0.84rem;color:#9ca3af">{name}</span>',
+            unsafe_allow_html=True,
+        )
+
+
+# ── Response rendering ─────────────────────────────────────────────────────
+
+
+def _render_meta(resp: Any, variant: str) -> None:
+    tokens = resp.token_usage or {}
+    latency = f"{(resp.latency_seconds or 0):.1f}s"
+    sources = len(resp.sources)
+    out_tok = tokens.get("output_tokens", 0)
+    # Extract short label after " — "
+    short = variant.split(" — ", 1)[-1] if " — " in variant else variant
     st.markdown(
-        (
-            f"<span class='status-dot {dot_class}'></span>"
-            f"<b>{name}</b> <span class='tiny-note'>({label})</span><br/>"
-            f"<span class='tiny-note'>{url}</span>"
-        ),
-        unsafe_allow_html=True,
-    )
-
-
-def _tool_calls_to_dict(tool_calls: list[Any] | None) -> list[dict[str, Any]]:
-    if not tool_calls:
-        return []
-    converted: list[dict[str, Any]] = []
-    for call in tool_calls:
-        try:
-            converted.append(asdict(call))
-        except TypeError:
-            converted.append({"value": str(call)})
-    return converted
-
-
-def _bootstrap_state() -> None:
-    st.session_state.setdefault("question_input", "")
-    st.session_state.setdefault("latest_response", None)
-    st.session_state.setdefault("history", [])
-
-
-def _set_quick_prompt(prompt_text: str) -> None:
-    st.session_state["question_input"] = prompt_text
-
-
-def _save_run(question: str, response: Any) -> None:
-    st.session_state["latest_response"] = response
-    st.session_state["history"].insert(
-        0,
-        {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "question": question,
-            "answer_preview": response.answer[:220],
-            "variant": response.variant,
-            "sources": len(response.sources),
-            "latency_seconds": response.latency_seconds,
-            "refused": response.refused,
-        },
-    )
-    st.session_state["history"] = st.session_state["history"][:20]
-
-
-def _render_hero() -> None:
-    st.markdown(
-        """
-        <div class='hero-card'>
-            <div class='hero-title'>RAG Assistant Showcase</div>
-            <p class='hero-subtitle'>Interactive QA + observability-ready traces for a strong technical demo.</p>
-            <p class='tiny-note'>Tip: use Variant D (orchestrator) for multi-step reasoning and tool visibility.</p>
+        f"""
+        <div class="meta-row">
+            <span class="variant-badge">{short}</span>
+            <span class="meta-chip">⏱ {latency}</span>
+            <span class="meta-chip">📄 {sources} fuente(s)</span>
+            <span class="meta-chip">🔤 {out_tok} tokens</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 
-def _sidebar_controls(config) -> tuple[str, int, bool]:
-    with st.sidebar:
-        st.header("Demo Controls")
-        variant = st.radio(
-            "Pipeline variant",
-            options=[
-                "A_semantic_llm",
-                "B_hybrid_llm",
-                "C_hybrid_rerank_llm",
-                "D_orchestrator",
-            ],
-            index=0,
-            help="A: lexical lightweight | B: hybrid retrieve | C: hybrid + rerank | D: planner/orchestrator",
-        )
-        top_k = st.slider("Top K", min_value=1, max_value=12, value=4)
-        orchestrator_rerank = st.checkbox(
-            "Use reranking inside orchestrator",
-            value=False,
-            disabled=variant != "D_orchestrator",
-        )
-        if variant == "C_hybrid_rerank_llm" or (variant == "D_orchestrator" and orchestrator_rerank):
-            st.warning("Reranking loads an additional model and may exceed memory on this machine.")
-
-        st.markdown("---")
-        st.subheader("Quick prompts")
-        c1, c2 = st.columns(2)
-        if c1.button("Becas", use_container_width=True):
-            _set_quick_prompt("Que tipos de becas existen y cual es el proceso de solicitud?")
-        if c2.button("Viajes", use_container_width=True):
-            _set_quick_prompt("Resume la politica de viajes y el proceso de aprobacion.")
-        c3, c4 = st.columns(2)
-        if c3.button("Comparativa", use_container_width=True):
-            _set_quick_prompt("Compara el procedimiento de becas con la politica de viajes.")
-        if c4.button("Correo", use_container_width=True):
-            _set_quick_prompt("Redacta un correo formal solicitando informacion sobre becas.")
-
-        st.markdown("---")
-        st.subheader("Service status")
-        for service_name, is_ok, url in _service_status(config):
-            _render_status_badge(service_name, is_ok, url)
-
-        st.markdown("---")
-        phoenix_url = _get_phoenix_url(config)
-        if hasattr(st, "link_button"):
-            st.link_button("Open Phoenix", phoenix_url, use_container_width=True)
-        else:
-            st.markdown(f"[Open Phoenix]({phoenix_url})")
-
-    return variant, top_k, orchestrator_rerank
-
-
-def _render_query_form() -> tuple[str, bool]:
-    with st.form("query_form", clear_on_submit=False):
-        question = st.text_area(
-            "Question",
-            key="question_input",
-            height=120,
-            placeholder="Ask something grounded in your indexed documents...",
-        )
-        submitted = st.form_submit_button("Run query", use_container_width=True)
-
-    return question, submitted
-
-
-def _render_latest_response(latest: Any) -> None:
-    tokens = latest.token_usage or {"input_tokens": 0, "output_tokens": 0}
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Variant", latest.variant or "n/a")
-    m2.metric("Latency (s)", f"{(latest.latency_seconds or 0.0):.2f}")
-    m3.metric("Tokens", f"{tokens.get('input_tokens', 0)} in / {tokens.get('output_tokens', 0)} out")
-    m4.metric("Sources", f"{len(latest.sources)} final / {latest.retrieved_count} retrieved")
-
-    st.subheader("Answer")
-    if latest.refused:
-        st.warning("Model refusal triggered: insufficient evidence according to current threshold.")
-    st.markdown(latest.answer)
-
-    if latest.email_draft is not None:
-        with st.expander("Email draft", expanded=False):
-            st.text_input("Subject", value=latest.email_draft.subject, disabled=True)
-            st.text_area("Body", value=latest.email_draft.body, height=200, disabled=True)
-            st.caption(f"Draft status: {latest.email_draft.status}")
-
-    st.subheader("Sources")
-    if not latest.sources:
-        st.info("No final sources were returned.")
-
-    for index, chunk in enumerate(latest.sources, start=1):
-        source_name = Path(chunk.source).name
-        with st.expander(f"[{index}] {source_name} | score={chunk.score:.4f}", expanded=False):
-            st.caption(f"chunk_index={chunk.chunk_index} | source={chunk.source}")
-            st.write(chunk.text)
-
-
-def _render_trace_panel() -> None:
-    st.subheader("Trace detail")
-    latest = st.session_state.get("latest_response")
-    if latest is None:
-        st.info("Run one query to see plan/tool calls and execution history.")
+def _render_email(resp: Any) -> None:
+    d = resp.email_draft
+    if d is None:
         return
-
-    if latest.plan is not None:
-        with st.expander("Orchestrator plan", expanded=True):
-            st.json(asdict(latest.plan))
-
-    tool_calls = _tool_calls_to_dict(latest.tool_calls)
-    with st.expander("Tool calls", expanded=True):
-        if tool_calls:
-            st.json(tool_calls)
-        else:
-            st.caption("No tool calls for this run.")
-
-    run_payload = {
-        "variant": latest.variant,
-        "latency_seconds": latest.latency_seconds,
-        "token_usage": latest.token_usage,
-        "refused": latest.refused,
-        "evidence_sufficient": latest.evidence_sufficient,
-        "sources": len(latest.sources),
-    }
-    with st.expander("Run summary JSON", expanded=False):
-        st.json(run_payload)
-
-    filename = f"rag_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    st.download_button(
-        "Download latest run",
-        data=json.dumps(run_payload, ensure_ascii=True, indent=2),
-        file_name=filename,
-        mime="application/json",
-        use_container_width=True,
-    )
-
-    st.markdown("---")
-    st.subheader("Recent runs")
-    history = st.session_state.get("history", [])
-    if not history:
-        st.caption("No runs yet.")
-        return
-
-    for item in history[:8]:
-        refused_label = "refused" if item["refused"] else "ok"
+    sent = d.status == "sent"
+    icon = "✉️ Correo enviado" if sent else "📝 Borrador de correo"
+    with st.expander(icon, expanded=True):
+        c1, c2 = st.columns([3, 1])
+        c1.markdown(f"**Asunto:** {d.subject}")
+        if d.to:
+            c2.markdown(f"**Para:** {d.to}")
+        st.text_area(
+            "Cuerpo del correo",
+            value=d.body,
+            height=160,
+            disabled=True,
+            key=f"email_body_{id(resp)}",
+        )
+        color = "#16a34a" if sent else "#d97706"
         st.markdown(
-            f"**{item['timestamp']}**<br>{item['variant']} | {item['sources']} sources | {refused_label}",
+            f'<span style="color:{color};font-size:0.78rem;font-weight:500">● {d.status}</span>',
             unsafe_allow_html=True,
         )
-        st.caption(item["question"])
-        st.caption(item["answer_preview"])
-        st.markdown("---")
+
+
+def _render_sources(resp: Any) -> None:
+    if not resp.sources:
+        return
+    label = f"📚 {len(resp.sources)} fragmento(s) recuperado(s)"
+    with st.expander(label, expanded=False):
+        for i, chunk in enumerate(resp.sources, 1):
+            name = Path(chunk.source).name
+            st.markdown(f"**[{i}] {name}** `score={chunk.score:.4f}`")
+            st.caption(chunk.text[:280] + ("…" if len(chunk.text) > 280 else ""))
+            if i < len(resp.sources):
+                st.divider()
+
+
+def _render_tools(resp: Any) -> None:
+    if not getattr(resp, "tool_calls", None):
+        return
+    with st.expander(f"🔧 {len(resp.tool_calls)} llamada(s) a herramienta", expanded=False):
+        for tc in resp.tool_calls:
+            try:
+                d = asdict(tc)
+            except TypeError:
+                d = {"value": str(tc)}
+            name = d.get("tool_name", "?")
+            summary = d.get("tool_output_summary") or ""
+            st.markdown(f"**`{name}`** → {summary}")
+
+
+def _render_response_extras(resp: Any, variant: str) -> None:
+    _render_meta(resp, variant)
+    _render_email(resp)
+    _render_sources(resp)
+    _render_tools(resp)
+
+
+# ── Main ───────────────────────────────────────────────────────────────────
 
 
 def main() -> None:
-    st.set_page_config(page_title="Assistant RAG Demo", layout="wide")
-    _bootstrap_state()
-    _inject_styles()
+    st.set_page_config(
+        page_title="Asistente UNIR",
+        page_icon="🎓",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    _inject_css()
+
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
+    if "meta" not in st.session_state:
+        st.session_state["meta"] = {}
 
     config = load_config()
-    variant, top_k, orchestrator_rerank = _sidebar_controls(config)
-    _render_hero()
+    variant, top_k = _sidebar(config)
 
-    left_col, right_col = st.columns([2.1, 1.25], gap="large")
+    # Header
+    st.markdown(
+        """
+        <div class="chat-header">
+            <div class="chat-header-title">Asistente Institucional UNIR</div>
+            <div class="chat-header-sub">
+                Consulta documentación universitaria · RAG con recuperación híbrida y orquestador ReAct
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with left_col:
-        question, submitted = _render_query_form()
-        if submitted:
-            if not question.strip():
-                st.warning("Please enter a question before running the pipeline.")
-            else:
-                use_lexical, use_hybrid, use_reranking, use_orchestrator = _variant_to_flags(
-                    variant, orchestrator_rerank
-                )
-                pipeline = _get_pipeline()
+    messages: list[dict] = st.session_state["messages"]
+    meta: dict[int, Any] = st.session_state["meta"]
+
+    # Welcome state
+    if not messages:
+        st.markdown(
+            """
+            <div class="welcome-card">
+                <div class="welcome-title">¿En qué puedo ayudarte?</div>
+                <div class="welcome-body">
+                    Pregúntame sobre matrícula, becas, normativas, el TFM o cualquier otra
+                    consulta universitaria. Puedo buscar en la documentación de UNIR
+                    y, si lo necesitas, redactar un correo formal.
+                </div>
+                <div class="welcome-examples">
+                    <span class="eg-pill">Plazos de matrícula</span>
+                    <span class="eg-pill">Tipos de becas</span>
+                    <span class="eg-pill">Requisitos del TFM</span>
+                    <span class="eg-pill">Redactar correo</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Render conversation history
+    for i, msg in enumerate(messages):
+        avatar = USER_AVATAR if msg["role"] == "user" else ASSISTANT_AVATAR
+        with st.chat_message(msg["role"], avatar=avatar):
+            st.markdown(msg["content"])
+            if msg["role"] == "assistant" and i in meta:
+                _render_response_extras(meta[i], meta[i].__dict__.get("variant", variant))
+
+    # Consume pending quick prompt (set by sidebar buttons)
+    pending: str | None = st.session_state.pop("_pending", None)
+
+    # Chat input
+    user_input: str | None = st.chat_input("Pregunta sobre UNIR: matrícula, becas, TFM, normativa…")
+    question: str | None = pending or user_input
+
+    if question:
+        # Display user turn
+        messages.append({"role": "user", "content": question})
+        with st.chat_message("user", avatar=USER_AVATAR):
+            st.markdown(question)
+
+        # Generate assistant response
+        flags = VARIANTS[variant]
+        use_lexical, use_hybrid, use_reranking, use_orchestrator = flags
+        pipeline = _get_pipeline()
+
+        with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
+            with st.spinner("Consultando documentación…"):
                 try:
-                    with st.spinner("Running retrieval + generation..."):
-                        response = pipeline.run_pipeline(
-                            question.strip(),
-                            top_k=top_k,
-                            use_lexical=use_lexical,
-                            use_hybrid=use_hybrid,
-                            use_reranking=use_reranking,
-                            use_orchestrator=use_orchestrator,
-                        )
-                    _save_run(question.strip(), response)
-                except Exception as exc:  # pragma: no cover - defensive UX handling
-                    message = str(exc)
-                    if "Read timed out" in message:
-                        st.error(
-                            "Pipeline timeout while waiting for Ollama. "
-                            "Use Variant A, keep Top K <= 4, and restart Ollama if needed."
-                        )
-                    else:
-                        st.error(f"Pipeline failed: {exc}")
+                    resp = pipeline.run_pipeline(
+                        question,
+                        top_k=top_k,
+                        use_lexical=use_lexical,
+                        use_hybrid=use_hybrid,
+                        use_reranking=use_reranking,
+                        use_orchestrator=use_orchestrator,
+                    )
+                    answer = resp.answer
+                    ok = True
+                except Exception as exc:
+                    timeout_hint = "Read timed out" in str(exc)
+                    answer = (
+                        "⚠️ Tiempo de espera agotado. Prueba con la variante A o reinicia Ollama."
+                        if timeout_hint
+                        else f"⚠️ Error al procesar la consulta: {exc}"
+                    )
+                    resp = None
+                    ok = False
 
-        latest = st.session_state.get("latest_response")
-        if latest is not None:
-            _render_latest_response(latest)
+            st.markdown(answer)
 
-    with right_col:
-        _render_trace_panel()
+            asst_idx = len(messages)
+            messages.append({"role": "assistant", "content": answer})
+
+            if ok and resp is not None:
+                meta[asst_idx] = resp
+                _render_response_extras(resp, variant)
 
 
 if __name__ == "__main__":

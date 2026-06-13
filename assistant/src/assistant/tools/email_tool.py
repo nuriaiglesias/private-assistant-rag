@@ -63,8 +63,9 @@ class EmailTool:
         if self._outlook_enabled():
             if self._send_directly and draft.to:
                 draft = self._send_via_outlook(draft)
-            else:
+            elif not self._send_directly and draft.to:
                 draft = self._save_to_outlook(draft)
+            # If no recipient is available, keep as local draft (no Outlook call)
 
         return draft
 
