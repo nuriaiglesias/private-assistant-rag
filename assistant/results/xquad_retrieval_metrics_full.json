@@ -1,0 +1,28 @@
+{
+  "dataset": "xquad.es",
+  "n_contexts": "all",
+  "timestamp": "2026-06-13T17:31:21.511217",
+  "variants": {
+    "A": {
+      "variant": "semantic",
+      "hit1": 0.93,
+      "hit3": 0.978,
+      "mrr": 0.956,
+      "n_questions": 1190
+    },
+    "B": {
+      "variant": "hybrid RRF",
+      "hit1": 0.921,
+      "hit3": 0.984,
+      "mrr": 0.953,
+      "n_questions": 1190
+    },
+    "C": {
+      "variant": "hybrid+rer",
+      "hit1": 0.984,
+      "hit3": 0.999,
+      "mrr": 0.991,
+      "n_questions": 1190
+    }
+  }
+}
