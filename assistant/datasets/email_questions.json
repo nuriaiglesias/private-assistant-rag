@@ -12,6 +12,34 @@
     "expected_email_action": true
   },
   {
+    "question": "Manda un email a administración preguntando por los plazos de matrícula",
+    "expected_email_action": true
+  },
+  {
+    "question": "Escríbeme un correo para pedir información sobre el TFM",
+    "expected_email_action": true
+  },
+  {
+    "question": "Necesito escribir un correo al departamento para consultar el calendario académico",
+    "expected_email_action": true
+  },
+  {
+    "question": "Envía un mensaje a secretaría para pedir mi certificado de notas",
+    "expected_email_action": true
+  },
+  {
+    "question": "Quiero mandar un email para preguntar sobre convalidaciones de asignaturas",
+    "expected_email_action": true
+  },
+  {
+    "question": "Redacta un correo pidiendo información sobre las tasas de matrícula",
+    "expected_email_action": true
+  },
+  {
+    "question": "Ayúdame a escribir un email solicitando una prórroga en la entrega del TFM",
+    "expected_email_action": true
+  },
+  {
     "question": "Que requisitos de acceso se piden para estudiar en UNIR?",
     "expected_email_action": false
   },
@@ -21,6 +49,34 @@
   },
   {
     "question": "Que pasos debo seguir para matricularme?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Cuantos créditos tiene el máster en ingeniería informática de UNIR?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Qué documentación necesito para hacer la preinscripción en UNIR?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Cuál es el precio de la matrícula en UNIR?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Cómo funciona el sistema de tutorías en UNIR?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Cuáles son los plazos de entrega del TFM en UNIR?",
+    "expected_email_action": false
+  },
+  {
+    "question": "Puedo convalidar asignaturas cursadas en otra universidad?",
+    "expected_email_action": false
+  },
+  {
+    "question": "UNIR tiene campus presencial o es todo online?",
     "expected_email_action": false
   }
 ]
