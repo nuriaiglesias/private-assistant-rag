@@ -91,7 +91,6 @@ def main() -> None:
         mode=args.mode,
     )
 
-    output_path = Path(args.output)
     if args.compare:
         base = output_path.with_suffix("")
         for mode, rows in results_by_mode.items():
@@ -102,10 +101,6 @@ def main() -> None:
         _write_jsonl(combined_path, result_rows)
         print(f"Results written to {combined_path}")
     else:
-        if args.mode and output_path == default_output:
-            output_path = Path(
-                f"data/evaluation/results/orchestrator_results_{args.mode}_{timestamp}.jsonl"
-            )
         _write_jsonl(output_path, result_rows)
         print(f"Results written to {output_path}")
 
