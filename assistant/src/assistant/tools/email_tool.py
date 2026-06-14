@@ -49,10 +49,10 @@ class EmailTool:
         supporting_context: str,
         to: str | None = None,
     ) -> EmailDraft:
-        """Build an EmailDraft and, if Outlook is configured, save it remotely."""
+        """Build a local EmailDraft. Never sends automatically — confirmation required."""
         subject, body = self._build_subject_and_body(user_request, supporting_context)
         resolved_to = to or self._default_to or None
-        draft = EmailDraft(
+        return EmailDraft(
             to=resolved_to,
             subject=subject,
             body=body,
@@ -60,14 +60,14 @@ class EmailTool:
             status="draft",
         )
 
-        if self._outlook_enabled():
-            if self._send_directly and draft.to:
-                draft = self._send_via_outlook(draft)
-            elif not self._send_directly and draft.to:
-                draft = self._save_to_outlook(draft)
-            # If no recipient is available, keep as local draft (no Outlook call)
-
-        return draft
+    def confirm_send(self, draft: EmailDraft) -> EmailDraft:
+        """Send the draft after explicit user confirmation."""
+        if not self._outlook_enabled() or not draft.to:
+            return EmailDraft(
+                to=draft.to, subject=draft.subject, body=draft.body,
+                requires_confirmation=False, status="draft_only",
+            )
+        return self._send_via_outlook(draft)
 
     def send_email(self, draft: EmailDraft, confirmed: bool = False) -> dict[str, str]:
         if draft.status == "sent":

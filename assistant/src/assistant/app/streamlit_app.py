@@ -155,11 +155,15 @@ def _render_meta(resp: Any, variant: str) -> None:
     )
 
 
-def _render_email(resp: Any) -> None:
+def _render_email(resp: Any, msg_idx: int) -> None:
     d = resp.email_draft
     if d is None:
         return
-    sent = d.status == "sent"
+
+    sent_key = f"email_sent_{msg_idx}"
+    confirmed_sent = st.session_state.get(sent_key, False)
+    sent = confirmed_sent or d.status == "sent"
+
     icon = "✉️ Correo enviado" if sent else "📝 Borrador de correo"
     with st.expander(icon, expanded=True):
         c1, c2 = st.columns([3, 1])
@@ -171,13 +175,23 @@ def _render_email(resp: Any) -> None:
             value=d.body,
             height=160,
             disabled=True,
-            key=f"email_body_{id(resp)}",
+            key=f"email_body_{msg_idx}",
         )
-        color = "#16a34a" if sent else "#d97706"
-        st.markdown(
-            f'<span style="color:{color};font-size:0.78rem;font-weight:500">● {d.status}</span>',
-            unsafe_allow_html=True,
-        )
+        if sent:
+            st.markdown(
+                '<span style="color:#16a34a;font-size:0.78rem;font-weight:500">● enviado</span>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<span style="color:#d97706;font-size:0.78rem;font-weight:500">● borrador — pendiente de confirmación</span>',
+                unsafe_allow_html=True,
+            )
+            if st.button("Confirmar y enviar", key=f"send_btn_{msg_idx}", type="primary"):
+                from assistant.tools.email_tool import EmailTool
+                result = EmailTool().confirm_send(d)
+                st.session_state[sent_key] = result.status == "sent"
+                st.rerun()
 
 
 def _render_sources(resp: Any) -> None:
@@ -207,9 +221,9 @@ def _render_tools(resp: Any) -> None:
             st.markdown(f"**`{name}`** → {summary}")
 
 
-def _render_response_extras(resp: Any, variant: str) -> None:
+def _render_response_extras(resp: Any, variant: str, msg_idx: int = 0) -> None:
     _render_meta(resp, variant)
-    _render_email(resp)
+    _render_email(resp, msg_idx)
     _render_sources(resp)
     _render_tools(resp)
 
@@ -278,7 +292,7 @@ def main() -> None:
         with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
             if msg["role"] == "assistant" and i in meta:
-                _render_response_extras(meta[i], meta[i].__dict__.get("variant", variant))
+                _render_response_extras(meta[i], meta[i].__dict__.get("variant", variant), msg_idx=i)
 
     # Consume pending quick prompt (set by sidebar buttons)
     pending: str | None = st.session_state.pop("_pending", None)
@@ -328,7 +342,7 @@ def main() -> None:
 
             if ok and resp is not None:
                 meta[asst_idx] = resp
-                _render_response_extras(resp, variant)
+                _render_response_extras(resp, variant, msg_idx=asst_idx)
 
 
 if __name__ == "__main__":
