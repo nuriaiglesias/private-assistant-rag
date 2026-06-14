@@ -151,8 +151,10 @@ def _evaluate_email_detection(
             use_reranking=use_reranking,
             use_orchestrator=True,
         )
-        plan = response.plan
-        predicted = plan.intent == "email_action" if plan else False
+        predicted = any(
+            tc.tool_name == "redactar_correo"
+            for tc in (response.tool_calls or [])
+        )
         correct += 1 if predicted == expected else 0
 
         results.append(
