@@ -17,11 +17,16 @@ class OpenAICompatibleClient(LLMClient):
         self._model = model
 
     def generate(self, messages: List[ChatMessage], temperature: float, max_tokens: int) -> LLMResponse:
+        tokens_key = (
+            "max_completion_tokens"
+            if self._base_url.startswith("https://api.openai.com")
+            else "max_tokens"
+        )
         payload = {
             "model": self._model,
             "messages": [message.__dict__ for message in messages],
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            tokens_key: max_tokens,
         }
         headers = {"Content-Type": "application/json"}
         if self._api_key:
