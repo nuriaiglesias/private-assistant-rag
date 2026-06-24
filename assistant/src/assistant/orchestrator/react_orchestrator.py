@@ -38,7 +38,7 @@ Herramientas disponibles:
   buscar(consulta)       - Recupera fragmentos del corpus documental de UNIR.
   redactar_correo(ctx)   - Redacta y envía un correo formal. Úsala cuando el usuario pida enviar o redactar un correo.
   responder()            - Finaliza indicando que tienes evidencia suficiente.
-  rechazar()             - Si el corpus no contiene información que responda la pregunta.
+  rechazar()             - Solo si la búsqueda no encontró evidencia útil.
 
 Formato obligatorio en CADA paso:
   Pensamiento: [razonamiento breve]
@@ -50,9 +50,7 @@ REGLAS — léelas antes de responder:
     llama DIRECTAMENTE a "redactar_correo". No llames a "buscar" antes.
   REGLA 2 (BUSCAR): Para preguntas informativas sobre UNIR, llama a "buscar" primero.
   REGLA 3 (RESPONDER): Llama a "responder" cuando los fragmentos recuperados respondan directamente la pregunta.
-  REGLA 4 (RECHAZAR): Llama a "rechazar" si los fragmentos recuperados NO contienen información
-    que responda directamente la pregunta. No basta con que "buscar" devuelva resultados —
-    evalúa si el contenido es realmente relevante para la consulta concreta.
+  REGLA 4 (RECHAZAR): Llama a "rechazar" ÚNICAMENTE si "buscar" no encontró nada útil.
   REGLA 5: Máximo {max_iter} pasos en total.
 
 Ejemplos:
