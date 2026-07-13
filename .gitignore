@@ -14,6 +14,10 @@ venv/
 .env
 .env.*
 
+# OAuth token caches
+.outlook_token_cache
+*token_cache*
+
 # Jupyter
 .ipynb_checkpoints/
 

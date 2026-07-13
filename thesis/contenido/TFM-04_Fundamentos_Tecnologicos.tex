@@ -436,3 +436,11 @@ Dentro de esa traza, cada etapa registra su propia información:
 Durante el desarrollo, Phoenix permitió detectar fallos de recuperación y prompts mal formados de forma inmediata, así como controlar el consumo de tokens por consulta, sin necesidad de depuración manual.
 Durante la evaluación experimental, facilitó verificar que las diferencias de rendimiento entre variantes se debían a los componentes evaluados y no a artefactos de configuración.
 En producción, la misma capa aportaría valor adicional para monitorizar latencias y mantener trazabilidad auditable sobre las respuestas generadas.
+La Figura~\ref{fig:phoenix-ui} muestra la interfaz de Phoenix con una traza del pipeline generada durante la evaluación.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{./contenido/imagenes/phoenix.png}
+\caption{Interfaz de observabilidad Phoenix mostrando una traza del pipeline RAG.}
+\label{fig:phoenix-ui}
+\end{figure}
