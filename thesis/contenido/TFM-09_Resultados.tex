@@ -236,8 +236,8 @@ Además un experimento de sensibilidad modificando la condición de rechazo del 
 
 \subsection{Análisis cualitativo de casos representativos}\label{sec:analisis-cualitativo}
 
-Las métricas agregadas reflejan el comportamiento medio del sistema, pero no permiten apreciar por qué una respuesta semánticamente correcta puede obtener una Fact-Coverage baja, ni en qué difiere el estilo generativo del orquestador frente al flujo determinista.
-Las siguientes tablas presentan tres casos concretos que ilustran estos fenómenos.
+Las métricas agregadas reflejan el comportamiento medio del sistema, pero no permiten apreciar por qué el reranker mejora la completitud de la respuesta ni cómo varía la cobertura factual entre variantes con el mismo recuperador pero diferente ordenación final.
+Las siguientes tablas presentan tres casos concretos: los dos primeros ilustran el impacto del reranker comparando las variantes B y C sobre la misma pregunta; el tercero muestra el comportamiento ante preguntas no respondibles.
 
 \begin{table}[H]
 \centering\footnotesize
@@ -248,22 +248,20 @@ Campo & Contenido \\
 \midrule
 Pregunta & ¿Existe una bolsa de empleo para estudiantes en UNIR? \\
 \addlinespace
-Variante & C: Híbrido + Reranker + LLM \\
-\addlinespace
 Fuente esperada & \texttt{bolsa-de-empleo-coie} \\
 \addlinespace
-Fragmento recuperado (top-1) & \emph{«Como estudiante de UNIR, tendrás acceso directo y gratuito a la bolsa de empleo de UNIR y a múltiples programas de empleo.»} \\
+Respuesta variante B & \emph{«Sí, UNIR dispone de una bolsa de empleo para sus estudiantes, con acceso directo y gratuito a través de su plataforma.»} \\
 \addlinespace
-Respuesta generada & \emph{«Sí, existe una bolsa de empleo gestionada a través del COIE. Los estudiantes tienen acceso a más de 2.200 empresas registradas y el acceso es directo y gratuito.»} \\
+Respuesta variante C & \emph{«Sí, existe una bolsa de empleo gestionada a través del COIE. Los estudiantes tienen acceso a más de 2.200 empresas registradas y el acceso es directo y gratuito.»} \\
 \addlinespace
-Hechos cubiertos & El COIE gestiona la bolsa~(\checkmark); más de 2.200 empresas registradas~(\checkmark); acceso gratuito~(\checkmark). \\
+Hechos cubiertos & B:~acceso gratuito~(\checkmark). C:~el COIE gestiona la bolsa~(\checkmark); más de 2.200 empresas registradas~(\checkmark); acceso gratuito~(\checkmark). \\
 \addlinespace
-Hechos no cubiertos & Prácticas en más de 1.500 empresas~(\texttimes): el dato estaba en un fragmento de menor rango no incluido en los 5 finales. \\
+Hechos no cubiertos & B:~COIE~(\texttimes); 2.200 empresas~(\texttimes); prácticas en más de 1.500 empresas~(\texttimes). C:~prácticas en más de 1.500 empresas~(\texttimes): dato en fragmento de menor rango no incluido en los 5 finales. \\
 \addlinespace
-Comentario & Éxito parcial. La fuente esperada es recuperada en primera posición. La respuesta cubre 3 de 4 hechos; la omisión ilustra cómo la generación puede no incorporar hechos presentes en fragmentos de bajo rango. \\
+Comentario & El reranker de C sitúa en primera posición el fragmento que contiene los detalles específicos (COIE, número de empresas), lo que permite al modelo incorporarlos en la respuesta. B recupera el mismo documento pero sin reordenación el fragmento más informativo queda en posición intermedia y no es aprovechado por la generación. \\
 \bottomrule
 \end{tabularx}
-\caption{Ejemplo cualitativo 1: pregunta de un documento con éxito parcial (variante C).}
+\caption{Ejemplo cualitativo 1: impacto del reranker sobre la completitud de la respuesta (variante B vs.\ C).}
 \label{tab:ejemplo-cualitativo-1}
 \end{table}
 
@@ -278,16 +276,16 @@ Pregunta & ¿Cómo es el Campus Virtual de UNIR? \\
 \addlinespace
 Hechos esperados & (1)~Accesible desde cualquier dispositivo; (2)~Aulas virtuales con clases en directo y diferido; (3)~Agenda de actividades y exámenes; (4)~Acceso a Biblioteca digital. \\
 \addlinespace
+Respuesta variante B & \emph{«[...] El Campus Virtual de UNIR permite acceder a las clases grabadas y al material del curso en cualquier momento [...]»} (aprox.\ 310 caracteres, 1 elemento relevante). \\
+\addlinespace
 Respuesta variante C & \emph{«[...] Asistencia a clases en vivo. Clases en diferido: todas las sesiones quedan guardadas [...]»} (585 caracteres, 2 elementos relevantes). \\
 \addlinespace
-Respuesta variante D & \emph{«[...] Asistencia a clases virtuales en vivo [...] Gestión de actividades: los estudiantes pueden visualizar y gestionar tareas y calificaciones [...]»} (909 caracteres, mayor estructuración). \\
+Hechos cubiertos & B:~(2)~\checkmark~(parcial, solo diferido). C:~(2)~\checkmark~(directo y diferido). Ambas variantes omiten (1) y (4). \\
 \addlinespace
-Hechos cubiertos & C:~(2)~\checkmark; D:~(2)~\checkmark,~(3)~\checkmark~(parcial). Ambas variantes omiten (1) y (4). \\
-\addlinespace
-Comentario & D genera una respuesta más elaborada que C, pero no cubre significativamente más hechos esperados. BERTScore se mantiene estable en ambas (contenido semánticamente relacionado), mientras que Fact-Coverage no mejora porque los hechos específicos no se enuncian de forma explícita. Ilustra por qué FC puede bajar con el orquestador a pesar de una respuesta aparentemente más completa. \\
+Comentario & C recupera un fragmento más completo gracias al reranker y genera una respuesta que cubre tanto las clases en vivo como las grabadas. B menciona solo el acceso en diferido porque el fragmento más relevante no alcanza la primera posición sin reordenación. Los hechos (1) y (4) están distribuidos en documentos distintos y ninguna variante los recupera con el top-5 disponible. \\
 \bottomrule
 \end{tabularx}
-\caption{Ejemplo cualitativo 2: elaboración del orquestador sin mejora de Fact-Coverage (variante C vs.\ D).}
+\caption{Ejemplo cualitativo 2: mejora incremental del reranker en la cobertura factual (variante B vs.\ C).}
 \label{tab:ejemplo-cualitativo-2}
 \end{table}
 
