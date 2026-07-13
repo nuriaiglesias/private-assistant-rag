@@ -1,96 +1,172 @@
-# TFM — RAG Assistant for UNIR
+# Diseño de un asistente institucional agéntico
+### Observabilidad, RAG y herramientas
 
-Master's Dissertation project in Artificial Intelligence.
+**TFM · Master Universitario en Inteligencia Artificial · UNIR 2025–26**  
+**Autor:** Nuria Iglesias Traviesa &nbsp;·&nbsp; **Tutor:** David Jiménez Cabello
 
-## Repository layout
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)
+![Qdrant](https://img.shields.io/badge/Vector%20store-Qdrant-DC143C?style=flat-square)
+![Ollama](https://img.shields.io/badge/LLM-qwen2.5%3A7b-1976D2?style=flat-square)
+![Phoenix](https://img.shields.io/badge/Observability-Phoenix-8E24AA?style=flat-square)
 
-```
-assistant/          Python project (RAG assistant)
-  corpus/           Knowledge base
-    processed_md/   26 Markdown documents (the corpus)
-    raw/            Seed URLs and raw data
-  data/raw/         Scraped HTML pages
-  datasets/         Evaluation question sets (71 Q UNIR, 6 Q email)
-  results/          Experiment outputs (JSONL + logs)
-  scripts/          Runnable entry points
-    ingest/         scrape_unir.py, ingest_documents.py, reset_vector_store.py
-    query/          ask.py, search_documents.py
-    eval/           evaluate_retrieval.py, evaluate_answers.py,
-                    evaluate_orchestrator.py, evaluate_public_dataset.py
-  src/assistant/    Python package
-    core/           config, paths
-    ingestion/      scraper, cleaner, document_loader, ingest
-    rag/            chunker, vector_store, retriever, reranker, pipeline
-    orchestrator/   router, rules, planner, evidence, orchestrator, state
-    llm/            factory, openai_provider (vLLM), ollama_provider
-    evaluation/     retrieval, answers, orchestrator, public_dataset
-    observability/  Phoenix / OpenTelemetry tracing
-    tools/          email_tool, summary_tool, registry
-    app/            streamlit_app.py (web UI)
-  docker-compose.yml  Qdrant + Phoenix services
-  requirements.txt
-  requirements-llm.txt  (vLLM CPU — heavy, install only when generating answers)
-thesis/             LaTeX sources for the dissertation (TFM.pdf)
-planning/           Sprint backlogs, metrics rubric, evaluation dataset CSV
-deliveries/         First submission archive
-```
+---
 
-## Quick start (from `assistant/`)
+## Demo y recursos
+
+| Recurso | Enlace |
+|---------|--------|
+| Vídeo de demostración | [Ver en Google Drive](https://drive.google.com/file/d/16hjMI20DtRpueGSbksihCKcH5a_2R5Pl/view?usp=sharing) |
+| Memoria del TFM | `thesis/TFM.pdf` |
+| Observabilidad (local) | http://localhost:6006 |
+
+---
+
+## Descripción
+
+Prototipo de asistente conversacional institucional privado que combina **recuperación documental híbrida**, **orquestación agéntica con ReAct** y **accionamiento supervisado de herramientas externas**. Diseñado para funcionar íntegramente en local, con trazabilidad completa del pipeline mediante OpenTelemetry y Arize Phoenix.
+
+**Capacidades principales:**
+
+- Respuesta fundamentada sobre corpus institucional (26 documentos UNIR)
+- Recuperación híbrida: densa (BGE-M3 + Qdrant) + léxica (BM25) con fusión RRF
+- Reranking cross-encoder (BGE-Reranker-v2-M3) sobre los 20 candidatos iniciales
+- Orquestador ReAct: razonamiento iterativo, abstención y uso de herramientas
+- Envío supervisado de correo electrónico: borrador → revisión humana → envío
+- Trazas completas del pipeline en Arize Phoenix (OpenTelemetry)
+
+---
+
+## Instalación rápida
+
+> Todos los comandos se ejecutan desde `assistant/`
 
 ```bash
-# 1. Create and activate a virtual environment
+# 1. Entorno virtual
 python3 -m venv .venv && source .venv/bin/activate
 
-# 2. Install dependencies
+# 2. Dependencias
 pip install -r requirements.txt
-pip install -r requirements-llm.txt   # only needed to generate answers
+pip install -r requirements-llm.txt   # solo para generación de respuestas
 
-# 3. Copy and edit the environment file
+# 3. Variables de entorno
 cp .env.example .env
-# edit .env — set LLM_PROVIDER, LLM_MODEL, and optionally PHOENIX_ENABLED
+# Editar .env: LLM_PROVIDER, LLM_MODEL y, opcionalmente, PHOENIX_ENABLED
 
-# 4. Start infrastructure
-docker compose up -d   # Qdrant :6333 + Phoenix :6006
+# 4. Infraestructura (Qdrant + Phoenix)
+docker compose up -d
 
-# 5. Ingest the corpus into Qdrant
+# 5. Ingestión del corpus
 python3 scripts/ingest/ingest_documents.py
 
-# 6. Start the LLM backend (Ollama example)
-ollama serve && ollama pull qwen2.5:0.5b-instruct
+# 6. Modelo LLM local (Ollama)
+ollama serve && ollama pull qwen2.5:7b
 
-# 7. Smoke test
-python3 scripts/query/ask.py "Que requisitos de acceso pide UNIR?"
+# 7. Interfaz de usuario
+streamlit run src/assistant/app/streamlit_app.py
+
+# — o prueba rápida desde CLI —
+python3 scripts/query/ask.py "¿Qué requisitos de acceso pide UNIR?"
 ```
 
-## Experimental variants (A–D)
+Trazas disponibles en **http://localhost:6006** (Phoenix).
 
-| Variant | Command flags | What it tests |
-|---------|--------------|---------------|
-| A | *(none)* | Baseline: dense retrieval + LLM |
-| B | `--use-reranking` | Hybrid (dense+BM25 RRF) + cross-encoder rerank |
-| C | `--use-orchestrator` | Agentic: routing, multi-query, evidence gating, email tool |
-| D | `--use-reranking --use-orchestrator` | Full system (B + C) |
+---
 
-## Running all evaluations (from `assistant/`)
+## Variantes del estudio ablativo
+
+Cuatro configuraciones progresivas evaluadas en la tesis:
+
+| Variante | Retrieval | Reranker | Orquestador |
+|----------|-----------|:--------:|:-----------:|
+| **A** — Baseline denso | BGE-M3 + Qdrant | — | — |
+| **B** — Híbrido RRF | Dense + BM25 (RRF) | — | — |
+| **C** — Híbrido + Reranker | Dense + BM25 (RRF) | ✓ | — |
+| **D** — Agéntico completo | Dense + BM25 (RRF) | ✓ | ✓ ReAct |
+
+---
+
+## Resultados principales (corpus UNIR, 71 preguntas)
+
+| Variante | Fact-Coverage | BERTScore F1 | Hit@3 |
+|----------|:-------------:|:------------:|:-----:|
+| A — Baseline denso | 0.389 | 0.643 | 0.852 |
+| B — Híbrido RRF | 0.496 | 0.641 | 0.902 |
+| C — Híbrido + Reranker | **0.527** | **0.656** | **0.918** |
+| D — Orquestador | 0.493 | 0.648 | 0.918 |
+
+El orquestador (D) cede algo de cobertura factual léxica a cambio de mayor control del flujo: abstención del 60 % ante preguntas no respondibles (frente al 30–50 % de los pipelines deterministas) y detección autónoma de solicitudes de correo electrónico.
+
+---
+
+## Evaluación
 
 ```bash
-# Retrieval quality
-python3 scripts/eval/evaluate_retrieval.py
-python3 scripts/eval/evaluate_retrieval.py --use-hybrid
-python3 scripts/eval/evaluate_retrieval.py --use-reranking
+# Métricas de recuperación (Hit@1, Hit@3, MRR)
+python3 scripts/eval/evaluate_retrieval.py                          # variante A
+python3 scripts/eval/evaluate_retrieval.py --use-hybrid             # variante B
+python3 scripts/eval/evaluate_retrieval.py --use-reranking          # variante C
 
-# Answer quality (A–D)
-python3 scripts/eval/evaluate_answers.py
-python3 scripts/eval/evaluate_answers.py --use-reranking
-python3 scripts/eval/evaluate_answers.py --use-orchestrator
+# Calidad de respuesta (Fact-Coverage, ROUGE-L, BERTScore)
+python3 scripts/eval/evaluate_answers.py                            # variante A
+python3 scripts/eval/evaluate_answers.py --use-reranking            # variante C
+python3 scripts/eval/evaluate_answers.py --use-orchestrator         # variante D
 python3 scripts/eval/evaluate_answers.py --use-reranking --use-orchestrator
 
-# Orchestrator comparison
+# Evaluación funcional del orquestador (abstención, detección de correo)
 python3 scripts/eval/evaluate_orchestrator.py --compare
 
-# External validity (XQuAD-es)
+# Validez externa — XQuAD-es (benchmark público)
 python3 scripts/eval/evaluate_public_dataset.py --mode hybrid --limit 300
 ```
 
-Results are written to `assistant/results/` as timestamped JSONL files.
-Traces are available in Phoenix at `http://localhost:6006`.
+Los resultados se guardan en `assistant/results/` como ficheros JSONL con marca de tiempo.
+
+---
+
+## Estructura del repositorio
+
+```
+assistant/
+├── corpus/
+│   ├── processed_md/       26 documentos Markdown (el corpus)
+│   └── raw/                URLs semilla y datos scrapeados
+├── datasets/               Conjuntos de evaluación (71 Q UNIR, 6 Q correo)
+├── results/                Resultados de experimentos (JSONL con timestamp)
+├── scripts/
+│   ├── ingest/             scrape_unir.py · ingest_documents.py · reset_vector_store.py
+│   ├── query/              ask.py · search_documents.py
+│   └── eval/               evaluate_retrieval.py · evaluate_answers.py
+│                           evaluate_orchestrator.py · evaluate_public_dataset.py
+├── src/assistant/
+│   ├── core/               config, paths
+│   ├── ingestion/          scraper, cleaner, document_loader, ingest
+│   ├── rag/                chunker, vector_store, retriever, reranker, pipeline
+│   ├── orchestrator/       router, rules, planner, evidence, orchestrator, state
+│   ├── llm/                factory, ollama_provider, openai_provider
+│   ├── evaluation/         retrieval, answers, orchestrator, public_dataset
+│   ├── observability/      Phoenix / OpenTelemetry tracing
+│   ├── tools/              email_tool, summary_tool, registry
+│   └── app/                streamlit_app.py (interfaz web)
+├── docker-compose.yml      Qdrant :6333 · Phoenix :6006
+├── requirements.txt
+└── requirements-llm.txt    Solo necesario para generación de respuestas
+thesis/                     Fuentes LaTeX → TFM.pdf
+planning/                   Backlogs de sprint, rúbrica de métricas, CSV de evaluación
+deliveries/                 Archivos de entrega
+```
+
+---
+
+## Stack tecnológico
+
+| Capa | Tecnología |
+|------|------------|
+| Embedding | `BAAI/bge-m3` |
+| Reranker | `BAAI/bge-reranker-v2-m3` |
+| Almacén vectorial | Qdrant |
+| LLM local | `qwen2.5:7b` via Ollama |
+| Observabilidad | Arize Phoenix + OpenTelemetry |
+| Correo electrónico | Microsoft Graph API + OAuth 2.0 |
+| Interfaz de usuario | Streamlit |
+| Infraestructura | Docker Compose |

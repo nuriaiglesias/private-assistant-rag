@@ -222,6 +222,7 @@ class RagPipeline:
                     top_k=top_k,
                 )
 
+            retrieve_span.set_attribute("rag.question", question)
             retrieve_span.set_attribute("rag.sources", len(sources))
             retrieve_span.set_attribute(
                 "rag.source_names",
@@ -231,6 +232,10 @@ class RagPipeline:
                 "rag.source_scores",
                 ", ".join(f"{chunk.score:.4f}" for chunk in sources),
             )
+            for i, chunk in enumerate(sources):
+                retrieve_span.set_attribute(f"rag.chunk_{i+1}.source", chunk.source)
+                retrieve_span.set_attribute(f"rag.chunk_{i+1}.score", chunk.score)
+                retrieve_span.set_attribute(f"rag.chunk_{i+1}.text", chunk.text[:300])
 
         return sources
 
@@ -296,6 +301,9 @@ class RagPipeline:
             generate_span.set_attribute("rag.prompt_chars", len(user_prompt))
             generate_span.set_attribute("rag.llm_provider", self._config.llm_provider)
             generate_span.set_attribute("rag.llm_model", self._config.llm_model)
+            generate_span.set_attribute("rag.question", question)
+            generate_span.set_attribute("rag.context", context[:2000])
+            generate_span.set_attribute("rag.num_sources", len(sources))
 
             response = self._llm.generate(
                 messages,
@@ -305,8 +313,8 @@ class RagPipeline:
 
             answer = response.content
 
+            generate_span.set_attribute("rag.answer", answer)
             generate_span.set_attribute("rag.answer_chars", len(answer))
-            generate_span.set_attribute("rag.answer_preview", answer[:280])
             generate_span.set_attribute("rag.input_tokens", response.input_tokens)
             generate_span.set_attribute("rag.output_tokens", response.output_tokens)
 
@@ -345,10 +353,20 @@ class RagPipeline:
             result_span.set_attribute("rag.use_hybrid", use_hybrid)
             result_span.set_attribute("rag.use_reranking", use_reranking)
             result_span.set_attribute("rag.use_orchestrator", use_orchestrator)
+            result_span.set_attribute("rag.question", question)
+            result_span.set_attribute("rag.answer", answer)
             result_span.set_attribute("rag.sources", len(final_sources))
             result_span.set_attribute(
                 "rag.source_names",
                 ", ".join(chunk.source for chunk in final_sources),
+            )
+            result_span.set_attribute(
+                "rag.source_scores",
+                ", ".join(f"{chunk.score:.4f}" for chunk in final_sources),
+            )
+            result_span.set_attribute(
+                "rag.source_texts",
+                " || ".join(chunk.text[:200] for chunk in final_sources),
             )
             result_span.set_attribute("rag.answer_chars", len(answer))
             result_span.set_attribute(

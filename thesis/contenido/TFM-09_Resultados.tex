@@ -126,7 +126,7 @@ Para evaluar la calidad de las respuestas se utilizaron métricas orientadas al 
 	\item \textbf{ROUGE-L F1}: mide la subsecuencia común más larga entre la respuesta generada y cada hecho esperado, calculando una media sobre todos los hechos de la pregunta.
 	\item \textbf{BERTScore F1}: mide la similitud semántica entre la respuesta generada y los hechos esperados mediante representaciones contextuales del modelo multilingüe \textit{bert-base-multilingual-cased}, calculando una media sobre todos los hechos de la pregunta.
 	\item \textbf{Tasa de abstención}: proporción de preguntas no respondibles en las que el sistema evita responder sin evidencia suficiente.
-	\item \textbf{Exactitud en la detección de intención de correo}: capacidad del orquestador para identificar solicitudes que requieren activar la herramienta de generación de borradores.
+	\item \textbf{Exactitud en la detección de intención de correo}: capacidad del orquestador para identificar solicitudes que requieren activar la herramienta de correo electrónico.
 \end{itemize}
 
 \subsection{Variantes evaluadas (ablation study)}\label{subsec:variantes-evaluadas}
@@ -159,7 +159,9 @@ El orquestador implementado sigue el paradigma ReAct \cite{yao2023react} (\texti
 En cada paso, el LLM selecciona la herramienta a invocar y el sistema devuelve la observación al modelo para el siguiente ciclo.
 Este diseño permite que el orquestador adapte su estrategia de recuperación en tiempo de ejecución en función del contenido real de los documentos encontrados.
 
-\section{Resultados de recuperación}\label{sec:resultados-recuperacion}
+\section{Evaluación sobre dataset privado: UNIR}\label{sec:resultados}
+
+\subsection{Resultados de recuperación documental}\label{sec:resultados-recuperacion}
 
 En esta sección se comparan los resultados obtenidos por las variantes A, B y C del \textit{ablation study}, evaluadas sobre las preguntas respondibles del dataset que cuentan con una fuente esperada, excluyendo las preguntas no respondibles.
 
@@ -184,12 +186,12 @@ Los resultados muestran un patrón diferenciado según el componente incorporado
 La variante A (semántico puro) obtiene Hit@1 = 0.574, Hit@3 = 0.852 y MRR = 0.712 como línea base, con buena precisión en la primera posición pero cobertura moderada en el top-3.
 
 La variante B (recuperación híbrida con \textit{Reciprocal Rank Fusion}) obtiene Hit@1 = 0.525 ($-$0.049 respecto a A), Hit@3 = 0.902 (+0.050) y MRR = 0.706 ($-$0.006). 
-La combinación densa y léxica introduce mayor diversidad de candidatos, lo que incrementa la presencia de documentos relevantes en el top-3 (+5,0 puntos porcentuales), pero puede desplazar documentos altamente relevantes de la primera posición cuando BM25 introduce candidatos léxicamente similares con menor relevancia semántica.
+La combinación densa y léxica introduce mayor diversidad de candidatos, lo que incrementa la presencia de documentos relevantes en el top-3 (+5,0 puntos porcentuales); el descenso en Hit@1 podría relacionarse con la incorporación de candidatos léxicos que desplazan fragmentos semánticamente más relevantes de la primera posición.
 
 La variante C (híbrido RRF + reranker \textit{BAAI/bge-reranker-v2-m3}) obtiene Hit@1 = 0.557 ($-$0.017 respecto a A), Hit@3 = 0.918 (+0.066) y MRR = 0.738 (+0.026). 
-El reranker multilingüe recupera parcialmente la precisión en primera posición y eleva la MRR por encima de la línea base, lo que indica que el modelo \textit{cross-encoder} es capaz de reordenar correctamente los candidatos del pool híbrido. Hit@3 alcanza el valor más alto de las tres variantes (0.918), lo que sugiere que la combinación de recuperación híbrida con reranking proporciona el pool de evidencia más rico para la generación.
+El reranker multilingüe recupera parcialmente la precisión en primera posición y eleva la MRR por encima de la línea base, lo que indica que el modelo \textit{cross-encoder} es capaz de reordenar correctamente los candidatos del pool híbrido. Hit@3 alcanza el valor más alto de las tres variantes (0.918), lo que es coherente con que la combinación de recuperación híbrida con reranking proporcione el pool de evidencia más rico para la generación.
 
-\section{Resultados de calidad de respuesta}\label{sec:resultados-respuesta}
+\subsection{Resultados de calidad de respuesta}\label{sec:resultados-respuesta}
 
 Además de evaluar la recuperación documental, se analizaron las respuestas generadas por las cuatro variantes del \textit{ablation study}. 
 Esta evaluación permite comprobar si las mejoras introducidas en el pipeline de recuperación se traducen en respuestas con mayor cobertura informativa.
@@ -198,16 +200,16 @@ La evaluación se realizó sobre las 61 preguntas respondibles del dataset, incl
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Variante} & \textbf{n resp.} & \textbf{Fact-Cov.} & \textbf{$\Delta$} & \textbf{ROUGE-L} & \textbf{BERTScore F1} \\
+\textbf{Variante} & \textbf{Fact-Cov.} & \textbf{$\Delta$} & \textbf{ROUGE-L} & \textbf{BERTScore F1} \\
 \midrule
-A: Semántico + LLM               & 61 & 0.389 & --      & 0.093 & 0.643 \\
-B: Híbrido + LLM                 & 61 & 0.496 & +0.107  & 0.094 & 0.641 \\
-C: Híbrido + Reranker + LLM      & 61 & 0.527 & +0.031  & 0.102 & 0.656 \\
-D: Orquestador + Híbrido + Rer.  & 61 & 0.493 & $-$0.034 & 0.094 & 0.648 \\
+A: Semántico + LLM               & 0.389 & --      & 0.093 & 0.643 \\
+B: Híbrido + LLM                 & 0.496 & +0.107  & 0.094 & 0.641 \\
+C: Híbrido + Reranker + LLM      & 0.527 & +0.138  & 0.102 & 0.656 \\
+D: Orquestador + Híbrido + Rer.  & 0.493 & +0.104  & 0.094 & 0.648 \\
 \bottomrule
-\multicolumn{6}{l}{\footnotesize $\Delta$ respecto a la variante anterior.}
+\multicolumn{5}{l}{\footnotesize $\Delta$ respecto al \textit{baseline} (variante A).}
 \end{tabular}
 \caption{Resultados del \textit{ablation study}: calidad de respuesta sobre preguntas respondibles.}
 \label{tab:resultados-calidad-respuesta}
@@ -218,10 +220,10 @@ La variante A, con recuperación semántica densa, obtiene una cobertura de hech
 La incorporación de recuperación híbrida en la variante B produce la mejora más notable: la cobertura factual aumenta hasta 0.496 (+0.107, +27,5\,\% relativo), lo que sugiere que combinar búsqueda densa y léxica permite recuperar fragmentos más informativos. 
 BERTScore permanece prácticamente igual (0.641), lo que sugiere que la ganancia se concentra en la cobertura léxica de los hechos esperados más que en la similitud semántica global de la respuesta.
 
-La variante C añade el reranker multilingüe y produce mejoras simultáneas en las tres métricas: Fact-Coverage sube a 0.527 (+0.031), ROUGE-L a 0.102 (+0.008) y BERTScore a 0.656 (+0.015). 
-La mejora conjunta en las tres métricas indica que el reranker selecciona fragmentos de mayor calidad informativa, no solo léxica, lo que se traduce en respuestas más completas y semánticamente más alineadas con los hechos esperados.
+La variante C añade el reranker multilingüe y produce mejoras simultáneas en las tres métricas: Fact-Coverage sube a 0.527 (+0.138 respecto al baseline), ROUGE-L a 0.102 y BERTScore a 0.656. 
+La mejora conjunta en las tres métricas sugiere que el reranker selecciona fragmentos de mayor calidad informativa, no solo léxica, lo que podría reflejarse en respuestas más completas y semánticamente más alineadas con los hechos esperados.
 
-La variante D (orquestador ReAct con recuperación híbrida y reranking), evaluada sobre las mismas 61 preguntas que el resto de variantes, obtiene una Fact-Coverage de 0.493 ($-$0.034 respecto a C), ROUGE-L de 0.094 y BERTScore de 0.648.
+La variante D (orquestador ReAct con recuperación híbrida y reranking), evaluada sobre las mismas 61 preguntas que el resto de variantes, obtiene una Fact-Coverage de 0.493 (+0.104 respecto al baseline A), ROUGE-L de 0.094 y BERTScore de 0.648.
 C sigue siendo la variante con mayor cobertura factual (0.527), y D se sitúa ligeramente por debajo en métricas léxicas pero mantiene un BERTScore competitivo (0.648 frente a 0.656 de C, diferencia de 0.008).
 Este resultado es coherente con la naturaleza del flujo ReAct: el orquestador tiende a generar respuestas más elaboradas y estructuradas que no maximizan el solapamiento léxico con los \textit{expected facts}, pero mantienen una calidad semántica equivalente.
 El orquestador no está diseñado para mejorar la calidad textual de las respuestas informativas, sino para ampliar las capacidades del sistema en dimensiones que estas métricas no capturan; dichas capacidades se analizan en la sección~\ref{sec:evaluacion-funcional-orquestador}.
@@ -230,10 +232,90 @@ Respecto al comportamiento ante preguntas no respondibles, todas las variantes f
 Las tasas de abstención obtenidas fueron 0.500\,(A), 0.300\,(B), 0.400\,(C) y 0.600\,(D).
 Estos valores muestran que el modelo \textit{qwen2.5:7b} presenta una capacidad de abstención innata incluso en los flujos deterministas.
 La variante D, al incorporar el orquestador ReAct, mejora la abstención hasta 0.600 gracias al mecanismo explícito de rechazo.
-Se realizó además un experimento de sensibilidad modificando la condición de rechazo del orquestador para que evaluase la relevancia del contenido recuperado y no solo su presencia: con este ajuste la tasa de abstención aumentó a 0.800, aunque se observó un incremento del rechazo incorrecto en algunas categorías (sobre-rechazo), con una caída de Fact-Coverage a 0.430.
-Este resultado ilustra el compromiso inherente entre precisión y cobertura en los mecanismos de abstención: endurecer la condición de rechazo mejora la tasa de abstención pero puede introducir falsos rechazos en preguntas respondibles.
+Además un experimento de sensibilidad modificando la condición de rechazo del orquestador evaluó la relevancia del contenido recuperado y no solo su presencia: la tasa de abstención aumentó a 0.800, aunque se observó un incremento del rechazo incorrecto en algunas categorías (sobre-rechazo), con una caída de Fact-Coverage a 0.430.
 
-\section{Evaluación funcional del orquestador}\label{sec:evaluacion-funcional-orquestador}
+\subsection{Análisis cualitativo de casos representativos}\label{sec:analisis-cualitativo}
+
+Las métricas agregadas reflejan el comportamiento medio del sistema, pero no permiten apreciar por qué una respuesta semánticamente correcta puede obtener una Fact-Coverage baja, ni en qué difiere el estilo generativo del orquestador frente al flujo determinista.
+Las siguientes tablas presentan tres casos concretos que ilustran estos fenómenos.
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{3.6cm}X}
+\toprule
+Campo & Contenido \\
+\midrule
+Pregunta & ¿Existe una bolsa de empleo para estudiantes en UNIR? \\
+\addlinespace
+Variante & C: Híbrido + Reranker + LLM \\
+\addlinespace
+Fuente esperada & \texttt{bolsa-de-empleo-coie} \\
+\addlinespace
+Fragmento recuperado (top-1) & \emph{«Como estudiante de UNIR, tendrás acceso directo y gratuito a la bolsa de empleo de UNIR y a múltiples programas de empleo.»} \\
+\addlinespace
+Respuesta generada & \emph{«Sí, existe una bolsa de empleo gestionada a través del COIE. Los estudiantes tienen acceso a más de 2.200 empresas registradas y el acceso es directo y gratuito.»} \\
+\addlinespace
+Hechos cubiertos & El COIE gestiona la bolsa~(\checkmark); más de 2.200 empresas registradas~(\checkmark); acceso gratuito~(\checkmark). \\
+\addlinespace
+Hechos no cubiertos & Prácticas en más de 1.500 empresas~(\texttimes): el dato estaba en un fragmento de menor rango no incluido en los 5 finales. \\
+\addlinespace
+Comentario & Éxito parcial. La fuente esperada es recuperada en primera posición. La respuesta cubre 3 de 4 hechos; la omisión ilustra cómo la generación puede no incorporar hechos presentes en fragmentos de bajo rango. \\
+\bottomrule
+\end{tabularx}
+\caption{Ejemplo cualitativo 1: pregunta de un documento con éxito parcial (variante C).}
+\label{tab:ejemplo-cualitativo-1}
+\end{table}
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{3.6cm}X}
+\toprule
+Campo & Contenido \\
+\midrule
+Pregunta & ¿Cómo es el Campus Virtual de UNIR? \\
+\addlinespace
+Hechos esperados & (1)~Accesible desde cualquier dispositivo; (2)~Aulas virtuales con clases en directo y diferido; (3)~Agenda de actividades y exámenes; (4)~Acceso a Biblioteca digital. \\
+\addlinespace
+Respuesta variante C & \emph{«[...] Asistencia a clases en vivo. Clases en diferido: todas las sesiones quedan guardadas [...]»} (585 caracteres, 2 elementos relevantes). \\
+\addlinespace
+Respuesta variante D & \emph{«[...] Asistencia a clases virtuales en vivo [...] Gestión de actividades: los estudiantes pueden visualizar y gestionar tareas y calificaciones [...]»} (909 caracteres, mayor estructuración). \\
+\addlinespace
+Hechos cubiertos & C:~(2)~\checkmark; D:~(2)~\checkmark,~(3)~\checkmark~(parcial). Ambas variantes omiten (1) y (4). \\
+\addlinespace
+Comentario & D genera una respuesta más elaborada que C, pero no cubre significativamente más hechos esperados. BERTScore se mantiene estable en ambas (contenido semánticamente relacionado), mientras que Fact-Coverage no mejora porque los hechos específicos no se enuncian de forma explícita. Ilustra por qué FC puede bajar con el orquestador a pesar de una respuesta aparentemente más completa. \\
+\bottomrule
+\end{tabularx}
+\caption{Ejemplo cualitativo 2: elaboración del orquestador sin mejora de Fact-Coverage (variante C vs.\ D).}
+\label{tab:ejemplo-cualitativo-2}
+\end{table}
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{3.6cm}X}
+\toprule
+Campo & Contenido \\
+\midrule
+Pregunta & ¿Cuál es la tasa exacta de empleabilidad de cada máster de UNIR en 2025? \\
+\addlinespace
+Tipo & No respondible (información no presente en el corpus). \\
+\addlinespace
+Fragmento recuperado (top-1) & \emph{«El 80\,\% de los estudiantes de la Facultad de Derecho mejoran profesionalmente [...]»} (dato general, no específico por máster ni por año 2025). \\
+\addlinespace
+Respuesta (variante C) & \emph{«No tengo información sobre la tasa exacta de empleabilidad de cada máster de UNIR para el año 2025. El contexto proporcionado no incluye datos específicos sobre esta métrica.»} \\
+\addlinespace
+Hechos cubiertos / no cubiertos & No aplicable: la abstención es la respuesta correcta. \\
+\addlinespace
+Comentario & Abstención correcta. El sistema reconoce que los fragmentos recuperados no contienen la información específica solicitada y evita generar una respuesta. La variante D incorpora además un mecanismo explícito de rechazo en el orquestador, lo que eleva la tasa de abstención de 0.400~(C) a 0.600~(D) sobre las preguntas no respondibles del dataset. \\
+\bottomrule
+\end{tabularx}
+\caption{Ejemplo cualitativo 3: abstención ante pregunta no respondible.}
+\label{tab:ejemplo-cualitativo-3}
+\end{table}
+
+\subsection{Evaluación funcional del orquestador}\label{sec:evaluacion-funcional-orquestador}
 
 La evaluación del orquestador no se limita únicamente a métricas de respuesta, ya que su objetivo principal no es sustituir al recuperador, sino coordinar el flujo de ejecución del asistente. 
 Por ello, se realizaron pruebas funcionales orientadas a comprobar si el sistema identifica correctamente el tipo de consulta y selecciona la acción adecuada.
@@ -264,57 +346,14 @@ Las preguntas no respondibles son gestionadas correctamente en todos los casos, 
 Las solicitudes de correo se detectan en 5 de 6 casos (83\,\%). 
 Sin embargo, el enrutamiento de preguntas multi-documento resulta el más problemático, con solo un 33\,\% de clasificaciones correctas, lo que sugiere que este tipo de consulta resulta especialmente difícil de identificar de forma automática y requeriría mayor esfuerzo de ajuste en iteraciones futuras.
 
-\section{Comparación de modelos de lenguaje}\label{sec:comparacion-modelos}
-
-Con el objetivo de comprobar si los resultados del \textit{ablation study} son robustos frente al modelo de lenguaje empleado, se replicó la evaluación de generación de las cuatro variantes utilizando \textit{GPT-5.4-mini} (OpenAI), un modelo propietario de mayor capacidad que el \textit{qwen2.5:7b} utilizado en los experimentos principales.
-La evaluación se realizó sobre el mismo conjunto de 61 preguntas respondibles del corpus de UNIR, con las mismas métricas.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccccc}
-\toprule
-& \multicolumn{3}{c}{\textbf{qwen2.5:7b (local)}} & \multicolumn{3}{c}{\textbf{GPT-5.4-mini (API)}} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7}
-\textbf{Variante} & \textbf{FC} & \textbf{RL} & \textbf{BS} & \textbf{FC} & \textbf{RL} & \textbf{BS} \\
-\midrule
-A: Semántico + LLM      & 0.389 & 0.093 & 0.643 & 0.468 & 0.098 & 0.663 \\
-B: Híbrido + LLM        & 0.496 & 0.094 & 0.641 & 0.554 & 0.098 & 0.663 \\
-C: Híbrido + Reranker   & 0.527 & 0.102 & 0.656 & 0.545 & 0.102 & 0.666 \\
-D: Orquestador          & 0.493 & 0.094 & 0.648 & 0.516 & 0.099 & 0.663 \\
-\bottomrule
-\end{tabular}
-\caption{Comparación de métricas de generación entre modelos (FC: Fact-Coverage, RL: ROUGE-L F1, BS: BERTScore F1). Evaluación sobre 61 preguntas respondibles del corpus de UNIR.}
-\label{tab:comparacion-modelos}
-\end{table}
-
-Los resultados muestran que GPT-5.4-mini obtiene valores superiores en todas las variantes: la Fact-Coverage mejora entre 0.023 y 0.058 puntos, y el BERTScore entre 0.010 y 0.022 puntos, lo que sugiere que un modelo de mayor capacidad genera respuestas con mayor cobertura léxica y semántica de los hechos esperados.
-
-El patrón de ordenamiento entre variantes se mantiene consistente entre modelos: las mejoras introducidas por la recuperación híbrida y el reranking producen ganancias observables con independencia del LLM, lo que refuerza la validez del \textit{ablation study}.
-Destaca que con GPT-5.4-mini la variante B (híbrida sin reranker, FC\,=\,0.554) supera ligeramente a C (FC\,=\,0.545), mientras que con qwen C era la mejor (0.527 vs 0.496).
-Este resultado sugiere que el reranker aporta más cuando el modelo generativo es menos capaz de explotar contextos de menor calidad; con un modelo más potente, la recuperación híbrida por sí sola ya resulta suficiente para alcanzar una cobertura alta.
-
-La variante D mantiene el mismo patrón en ambos modelos: Fact-Coverage inferior a B y C, pero BERTScore próximo al resto (0.663 frente a 0.666 de C), lo que confirma que la penalización en métricas léxicas refleja el estilo elaborado del flujo ReAct y no una degradación semántica real.
-
-Las métricas de recuperación (Hit@1, Hit@3, MRR) no se repiten en esta sección porque son independientes del modelo de lenguaje: el componente de recuperación opera de forma idéntica en ambas configuraciones.
-
 \section{Evaluación sobre dataset público: XQuAD-es}\label{sec:evaluacion-xquad}
 
-Con el objetivo de verificar que los componentes de recuperación generalizan más allá del corpus institucional de UNIR, se realizó una evaluación adicional sobre el dataset público \textbf{XQuAD-es}~\cite{artetxe2020cross}, la variante en español del benchmark \textit{Cross-lingual Question Answering Dataset}. 
+Con el objetivo de verificar que los componentes de recuperación generalizan más allá del corpus institucional de UNIR, se realizó una evaluación adicional sobre el dataset público \textbf{XQuAD-es}~\cite{artetxe2020cross}, la variante en español del benchmark \textit{Cross-lingual Question Answering Dataset}.
 XQuAD-es consta de 1.190 pares pregunta-respuesta distribuidos sobre 240 párrafos extraídos de la Wikipedia en español, y es ampliamente utilizado como referencia de recuperación y comprensión lectora en lenguas distintas del inglés.
 
-\subsection{Metodología}\label{subsec:xquad-metodologia}
-
-La evaluación se estructuró en dos partes diferenciadas para permitir una comparación justa entre todas las variantes.
-
-Para las variantes A, B y C, el sistema de recuperación se evaluó directamente sobre los 240 párrafos únicos del dataset, codificados con el mismo modelo de embeddings (\textit{BAAI/bge-m3}) empleado en el corpus de UNIR.
-Las métricas son idénticas a las de la evaluación interna (Hit@1, Hit@3, MRR), calculadas sobre los 1.190 pares pregunta-respuesta completos.
-
-Para la variante D, los 240 párrafos se ingirieron en una colección Qdrant temporal e independiente del corpus de UNIR, utilizando el mismo pipeline de ingesta y segmentación del sistema, lo que generó 502 fragmentos.
-El orquestador se ejecutó sobre este corpus con las mismas condiciones que en la evaluación interna, con recuperación híbrida y reranking.
-Esta configuración garantiza que todas las variantes operen sobre el mismo conjunto documental y hace posible la comparación directa.
-
-La evaluación de generación se realizó sobre un subconjunto de 25 preguntas por variante, en lugar de las 1.190 del conjunto de recuperación. Esta restricción responde a coste computacional: cada pregunta en el flujo de generación requiere una llamada completa al modelo de lenguaje (y varias en el caso del orquestador), lo que hace inviable evaluar el conjunto completo dentro de las restricciones de tiempo de cómputo disponibles. El subconjunto de 25 preguntas se seleccionó de forma aleatoria del conjunto completo y se utilizó de forma idéntica en todas las variantes para garantizar la comparabilidad.
+La evaluación de recuperación se realizó sobre los 1.190 pares completos, con los 240 párrafos codificados mediante el mismo modelo de embeddings (\textit{BAAI/bge-m3}) empleado en el corpus de UNIR.
+Para la variante D, los párrafos se ingirieron en una colección Qdrant temporal e independiente, generando 502 fragmentos, con el mismo pipeline de ingesta del sistema.
+La evaluación de generación se realizó sobre un subconjunto aleatorio de 25 preguntas por variante, seleccionado con semilla fija para garantizar la comparabilidad; evaluar las 1.190 preguntas era inviable por el coste computacional de las llamadas al modelo de lenguaje.
 
 \subsection{Resultados de recuperación}\label{subsec:xquad-resultados-recuperacion}
 
@@ -329,9 +368,7 @@ La Tabla~\ref{tab:xquad-retrieval} muestra los resultados de recuperación de la
 A: Semántico           & 0.930 & --       & 0.978 & --       & 0.956 & -- \\
 B: Híbrido (RRF)       & 0.921 & $-$0.009 & 0.984 & +0.006   & 0.953 & $-$0.003 \\
 C: Híbrido + Reranker  & 0.984 & +0.054   & 0.999 & +0.021   & 0.991 & +0.035 \\
-D: Orquestador + Híbrido + Reranker$^*$ & 0.984 & +0.054 & 0.999 & +0.021 & 0.991 & +0.035 \\
 \bottomrule
-\multicolumn{7}{l}{\footnotesize $^*$ La variante D emplea el mismo retriever que C (híbrido RRF + reranker); los valores de recuperación son idénticos.}
 \end{tabular}
 \caption{Resultados de recuperación sobre XQuAD-es (1.190 preguntas, 240 contextos únicos).}
 \label{tab:xquad-retrieval}
@@ -350,14 +387,14 @@ La Tabla~\ref{tab:xquad-generation} recoge los resultados de calidad de respuest
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Variante} & \textbf{n} & \textbf{Fact-Coverage} & \textbf{ROUGE-L F1} & \textbf{BERTScore F1} \\
+\textbf{Variante} & \textbf{Fact-Coverage} & \textbf{ROUGE-L F1} & \textbf{BERTScore F1} \\
 \midrule
-A: Semántico + LLM                  & 25 & 0.280 & 0.075 & 0.574 \\
-B: Híbrido (RRF) + LLM              & 25 & 0.280 & 0.072 & 0.575 \\
-C: Híbrido + Reranker + LLM         & 25 & 0.200 & 0.055 & 0.563 \\
-D: Orquestador + Híbrido + Reranker & 25 & 0.160 & 0.046 & 0.568 \\
+A: Semántico + LLM                  & 0.280 & 0.075 & 0.574 \\
+B: Híbrido (RRF) + LLM              & 0.280 & 0.072 & 0.575 \\
+C: Híbrido + Reranker + LLM         & 0.200 & 0.055 & 0.563 \\
+D: Orquestador + Híbrido + Reranker & 0.160 & 0.046 & 0.568 \\
 \bottomrule
 \end{tabular}
 \caption{Resultados de generación sobre XQuAD-es (corpus XQuAD temporal, 25 preguntas por variante).}
@@ -369,10 +406,9 @@ Esta estabilidad es coherente con la naturaleza de XQuAD: el corpus es reducido 
 
 La cobertura factual y ROUGE-L muestran un patrón diferente al observado en la evaluación interna.
 A y B obtienen la misma Fact-Coverage (0.280), mientras que C desciende a 0.200 y D a 0.160.
-La razón es que XQuAD define las respuestas esperadas como fragmentos exactos y cortos del texto original (por ejemplo, un nombre, una fecha o una cifra).
-El sistema, sin embargo, genera respuestas en lenguaje natural completas, no extrae spans.
-Cuando la respuesta generada es correcta pero está expresada con palabras distintas a las del fragmento esperado, Fact-Coverage y ROUGE-L la penalizan porque miden coincidencia exacta de palabras.
-Esta penalización se agrava en C porque el reranker puede seleccionar un fragmento semánticamente relevante que no contiene las palabras exactas de la respuesta esperada; y en D porque el orquestador genera respuestas aún más elaboradas, que se alejan léxicamente del span original aunque sean factualmente correctas.
+Una posible explicación es la naturaleza del benchmark: XQuAD define las respuestas esperadas como fragmentos exactos y cortos del texto original (por ejemplo, un nombre, una fecha o una cifra), mientras que el sistema genera respuestas en lenguaje natural completas, no extrae spans.
+Cuando la respuesta generada es correcta pero está expresada con palabras distintas a las del fragmento esperado, Fact-Coverage y ROUGE-L la penalizan al medir coincidencia léxica y no semántica.
+Esta desalineación podría acentuarse en C, donde el reranker puede priorizar fragmentos semánticamente relevantes que no contienen el vocabulario exacto de la respuesta esperada, y en D, donde el orquestador tiende a generar respuestas más elaboradas que se alejan léxicamente del span de referencia.
 
 Un ejemplo concreto ilustra este efecto. Ante la pregunta \textit{«¿Cuántos balones interceptó Josh Norman?»}, el \textit{expected fact} de XQuAD es el span exacto \texttt{"cuatro"}. La respuesta generada por el sistema fue: \textit{«Josh Norman interceptó 4 pases durante la temporada [2][3]»}. La respuesta es factualmente correcta —4 equivale a cuatro—, pero ROUGE-L asigna 0 al no existir solapamiento léxico entre \texttt{"cuatro"} y \texttt{"4"}. BERTScore, en cambio, captura la equivalencia semántica y asigna una puntuación de 0.571, más representativa de la calidad real de la respuesta.
 
@@ -411,13 +447,13 @@ Los resultados obtenidos permiten extraer varias conclusiones relevantes sobre e
 
 En primer lugar, la incorporación de recuperación híbrida y reranking mejora el rendimiento del sistema en las métricas de recuperación. 
 La variante B (híbrido RRF) muestra que la fusión léxico-semántica amplía la cobertura en el top-3: Hit@3 pasa de 0.852 a 0.902 (+0.050) respecto a A, aunque Hit@1 desciende ligeramente ($-$0.049) y MRR se mantiene prácticamente igual ($-$0.006). 
-Este patrón indica que BM25 introduce candidatos léxicamente relevantes que mejoran la presencia de la fuente esperada en posiciones intermedias, pero no siempre en primera posición. 
+Este patrón sugiere que BM25 introduce candidatos léxicamente relevantes que mejoran la presencia de la fuente esperada en posiciones intermedias, pero no siempre en primera posición. 
 La variante C (híbrido RRF + reranker \textit{BAAI/bge-reranker-v2-m3}) obtiene Hit@1 = 0.557 ($-$0.017 respecto a A), Hit@3 = 0.918 (+0.066) y MRR = 0.738 (+0.026). 
 El reranker multilingüe reordena el pool híbrido de forma más precisa: Hit@3 alcanza su valor máximo y MRR supera al baseline, lo que sugiere que el modelo \textit{cross-encoder} aporta una discriminación adicional que no ofrece ni la búsqueda semántica ni la léxica por separado.
 
 En segundo lugar, la variante D (orquestador) obtiene una cobertura factual de 0.493, ligeramente inferior a C (0.527, $-$0.034).
-Este resultado indica que la mayor parte de la ganancia en calidad de respuesta proviene del pipeline de recuperación híbrido con reranking, y que el orquestador no añade una mejora en cobertura factual léxica cuando el retriever ya proporciona evidencia de buena calidad.
-La diferencia en BERTScore es mínima (0.648 vs 0.656), lo que sugiere que la calidad semántica de las respuestas es equivalente y que la penalización en Fact-Coverage refleja el estilo más elaborado de las respuestas del flujo ReAct más que una degradación real.
+Este resultado sugiere que la mayor parte de la ganancia en calidad de respuesta proviene del pipeline de recuperación híbrido con reranking, y que el orquestador no añade una mejora en cobertura factual léxica cuando el retriever ya proporciona evidencia de buena calidad.
+La diferencia en BERTScore es mínima (0.648 vs 0.656), lo que sugiere que la calidad semántica de las respuestas es equivalente y que la penalización en Fact-Coverage es coherente con el estilo más elaborado de las respuestas del flujo ReAct más que con una degradación real.
 El orquestador aporta valor en dimensiones que van más allá de la cobertura factual: la tasa de abstención del flujo ReAct (0.600) supera a los flujos deterministas (A: 0.500, B: 0.300, C: 0.400), y la detección de solicitudes de correo (0.833 de exactitud) indica que la arquitectura puede extenderse hacia funcionalidades accionables, manteniendo un flujo controlado y trazable.
 
 En conjunto, los resultados muestran que las mejoras sobre el recuperador tienen un impacto directo y medible en la calidad de las respuestas generadas: la cobertura factual pasa de 0.389 (variante A) a 0.527 (variante C), una mejora del 35,5\,\%, coherente con la progresión observada también en ROUGE-L y BERTScore.

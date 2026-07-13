@@ -33,10 +33,10 @@ Para el contexto de este trabajo, ReAct resulta especialmente relevante porque i
 Sobre esta idea inicial, la investigación posterior ha ampliado el foco desde agentes individuales hacia sistemas compuestos por múltiples agentes especializados, como AgentVerse \parencite{chen2024agentverse}, un marco de colaboración multiagente en el que distintos agentes cooperan para resolver tareas.
 Los resultados descritos por los autores muestran que, en determinados escenarios, un conjunto coordinado de agentes puede superar a un único agente generalista. 
 
-Hong et al.\ \parencite{hong2024metagpt} proponen MetaGPT que frente a aproximaciones más informales, introduce una organización más estructurada del trabajo entre agentes, de forma que cada componente participa en una fase concreta del proceso y verifica resultados intermedios. 
+Hong et al.\ \parencite{hong2024metagpt} proponen MetaGPT, que, frente a aproximaciones más informales, introduce una organización más estructurada del trabajo entre agentes, de forma que cada componente participa en una fase concreta del proceso y verifica resultados intermedios. 
 Sugiere que la división explícita de responsabilidades puede reducir inconsistencias y facilitar la incorporación de nuevas capacidades sin rediseñar completamente el sistema.
 
-Por su parte, Wu et al.\ \cite{wu2024autogen} presentan AutoGen, uno de los elementos más destacables es que los agentes pueden operar en distintos modos, combinando modelos de lenguaje, intervención humana y uso de herramientas externas. 
+Por su parte, Wu et al.\ \cite{wu2024autogen} presentan AutoGen. Uno de los elementos más destacables es que los agentes pueden operar en distintos modos, combinando modelos de lenguaje, intervención humana y uso de herramientas externas. 
 Esta visión encaja con el enfoque de este proyecto, en el que se persigue una arquitectura en la que un agente orquestador coordine módulos y capacidades desacopladas dentro de un entorno controlado.
 
 Más recientemente, Dang et al.\ \cite{dang2025evolving} plantean un esquema centralizado en el que un orquestador dirige de forma adaptativa a los distintos agentes según el estado de la tarea. 
@@ -93,7 +93,7 @@ A partir de esta base, varios trabajos han abordado la optimización del entrena
 Entre ellos, Qu et al.\ \cite{qu2021rocketqa} proponen RocketQA, que introduce mejoras específicas como la selección de negativos poco informativos o la existencia de falsos negativos en el entrenamiento. 
 Esta aportación demuestra que una mejora del \textit{retrieval} no tiene por qué implicar rediseñar todo el pipeline, sino que puede consistir en una forma específica el entrenamiento o la selección de evidencia recuperada.
 
-Nogueira et al.\ \cite{nogueira2020seq2seqranking} demuestran que un modelo generativo puede emplearse eficazmente para calcular relevancia documental y reordenar documentos previamente recuperados. 
+Nogueira et al.\ \cite{nogueira2020monot5} demuestran que un modelo generativo puede emplearse eficazmente para calcular relevancia documental y reordenar documentos previamente recuperados. 
 Esta estrategia resulta atractiva porque permite aumentar la calidad del contexto recuperado sin comprometer excesivamente la arquitectura.
 
 No obstante, mejorar el \textit{retrieval} no es suficiente si no se dispone de criterios adecuados para medir su impacto. 
@@ -127,13 +127,13 @@ Este trabajo es especialmente relevante para la parte investigadora, ya que demu
 
 La propuesta de este TFM se sitúa en la intersección entre asistentes institucionales especializados, sistemas de uso de herramientas y mejora experimental del componente de recuperación de información. 
 Por una parte, se plantea un asistente institucional especializado orientado a resolver consultas sobre documentación interna. 
-Por otra, incorpora una funcionalidad accionable: la generación y eventual envío supervisado de correos electrónicos como paso operativo posterior a la consulta. 
+Por otra, incorpora una funcionalidad accionable: la generación y envío supervisado de correos electrónicos como paso operativo posterior a la consulta, donde el sistema presenta siempre un borrador al usuario y realiza el envío a través de la API de Microsoft Graph únicamente tras su confirmación explícita. 
 Finalmente incorpora una contribución experimental específica sobre el componente de recuperación de información basada en recuperación híbrida y \textit{reranking}.
 
 La propuesta busca cerrar el ciclo entre consulta y acción, transformando una necesidad informativa en una respuesta fundamentada y, cuando procede, en una actuación útil, trazable y supervisada. Esta es precisamente la aportación diferencial del trabajo: combinar en una misma arquitectura capacidades que en la literatura suelen abordarse por separado, como la recuperación documental, la mejora del ranking, la orquestación del flujo y el uso controlado de herramientas.
 
 Comparada con Marcel, nuestra propuesta comparte el interés por un asistente universitario basado en RAG, pero se diferencia en dos aspectos fundamentales. 
-En primer lugar, el caso de uso no se restringe a admisión ni a orientación externa, sino que se orienta a soporte institucional sobre documentación y procedimientos internos. En segundo lugar, el sistema no se limita a responder preguntas, sino que incorpora una transición explícita desde la evidencia documental hacia una acción operativa, en este caso la redacción o envío supervisado de correos formales.
+En primer lugar, el caso de uso no se restringe a admisión ni a orientación externa, sino que se orienta a soporte institucional sobre documentación y procedimientos internos. En segundo lugar, el sistema no se limita a responder preguntas, sino que incorpora una transición explícita desde la evidencia documental hacia una acción operativa, en este caso la redacción supervisada de correos formales.
 
 En relación con URASys, la propuesta coincide en la importancia de operar en entornos cerrados, reducir alucinaciones y tratar consultas difíciles. 
 No obstante, mientras URASys concentra su aportación en la robustez del \textit{question answering} frente a ambigüedad y no respondibles, este proyecto amplía el alcance hacia una arquitectura con capacidad de acción.

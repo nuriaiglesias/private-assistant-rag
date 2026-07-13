@@ -56,9 +56,9 @@ Con el fin de que los objetivos anteriores puedan verificarse de forma objetiva,
     
     \item En las preguntas no respondibles, se evaluará la capacidad del sistema para abstenerse de responder cuando no exista evidencia suficiente en el corpus documental.
     
-    \item En los casos orientados a acción, se evaluará la capacidad del orquestador para detectar la intención de generación de correo y producir un borrador adecuado, sin realizar el envío real del mensaje.
+    \item En los casos orientados a acción, se evaluará la capacidad del orquestador para detectar la intención de envío de correo y activar correctamente la herramienta de correo electrónico. La herramienta genera siempre un borrador que el usuario revisa; el envío real a través de la API de Microsoft Graph se realiza únicamente tras la confirmación explícita del usuario.
     
-    \item La evaluación funcional del orquestador comprobará si el sistema selecciona el flujo adecuado en consultas simples, consultas multi-documento, preguntas comparativas, preguntas no respondibles y solicitudes de generación de borradores.
+    \item La evaluación funcional del orquestador comprobará si el sistema selecciona el flujo adecuado en consultas simples, consultas multi-documento, preguntas comparativas, preguntas no respondibles y solicitudes de correo electrónico.
 \end{itemize}
 
 \section{Metodología del trabajo}\label{sec:metodologia}
@@ -181,7 +181,7 @@ Al finalizar este sprint deberá existir una primera versión ejecutable del asi
 \subsection{Sprint 4: integración de la funcionalidad accionable}
 
 Una vez disponible el \textit{baseline}, el siguiente sprint se centrará en ampliar el sistema con una capacidad accionable. 
-En concreto, se integrará la generación de borradores de correos electrónicos formales a partir de la consulta del usuario y de la información recuperada desde la base documental.
+En concreto, se integrará la generación y envío supervisado de correos electrónicos formales: el sistema genera un borrador a partir de la consulta del usuario y de la información recuperada, lo presenta para su revisión y realiza el envío únicamente tras la confirmación explícita del usuario.
 
 Esta fase permitirá que el asistente no solo responda preguntas, sino que también apoye una actuación posterior útil dentro del entorno institucional. 
 Al finalizar este sprint, el prototipo deberá ser capaz de producir una salida operativa básica en los casos orientados a acción.
@@ -197,7 +197,7 @@ El objetivo será introducir una mejora concreta y controlada sobre el proceso d
 En este sprint se preparará y ejecutará la evaluación comparativa entre el \textit{baseline} y la variante mejorada. 
 Para ello, se terminará de construir el conjunto de casos de prueba, se definirán las rúbricas de evaluación manual y se recogerán las métricas seleccionadas para el análisis.
 
-La comparación se centrará en dimensiones como la calidad de la recuperación, la fundamentación de las respuestas, la utilidad de los borradores generados y el coste temporal del sistema. 
+La comparación se centrará en dimensiones como la calidad de la recuperación, la fundamentación de las respuestas, la eficacia de la herramienta de correo electrónico y el coste temporal del sistema. 
 Esta fase permitirá disponer de resultados cuantitativos con los que analizar el impacto real de la mejora propuesta.
 
 \subsection{Sprint 7: Revisión final, análisis de resultados y redacción de la memoria}

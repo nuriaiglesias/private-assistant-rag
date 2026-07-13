@@ -10,7 +10,16 @@
     \xdef\ciudadv{\@ciudad}
 \makeatother
 
-%Referencias 
+%Matemáticas
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+%Diagramas
+\PassOptionsToPackage{table,dvipsnames,x11names}{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+
+%Referencias
 \usepackage{footmisc}
 \usepackage{hyperref}
 \hypersetup{
@@ -37,6 +46,7 @@
 
 %Tablas (líneas horizonales toprule,bottomrule,midrule)
 \usepackage{booktabs}
+\usepackage{multirow}
 
 %Estructura del documento
 \usepackage[toc,page,title,titletoc]{appendix}
@@ -136,7 +146,7 @@
                 Presentado por: \georgiamd \autorv \par
                 \vspace{0.5cm}
                 \georgiab Director: \georgiamd \directorv \par
-                \vspace{3cm}
+                \vspace{1cm}
                 {\color{azul}%
                 \georgiab Ciudad: \georgiamd \ciudadv \par
                 \georgiab Fecha: \georgiamd \fechav \par}

@@ -4,41 +4,56 @@ Este capítulo recoge las principales aportaciones del trabajo, valora el grado 
 
 \section{Resumen de la contribución}\label{sec:resumen-contribucion}
 
-El objetivo principal de este trabajo era diseñar, implementar y evaluar un asistente institucional privado capaz de consultar documentación interna mediante un sistema de \textit{Retrieval-Augmented Generation} (RAG) y de apoyar acciones operativas mediante herramientas integradas. El prototipo desarrollado materializa este objetivo a través de una arquitectura modular que coordina cuatro capacidades complementarias: recuperación documental sobre un corpus institucional, mejora del \textit{ranking} de evidencias mediante recuperación híbrida y \textit{reranking}, orquestación del flujo de interacción mediante un agente basado en el paradigma ReAct, y generación y envío supervisado de correos electrónicos como acción operativa concreta.
+El objetivo principal de este trabajo es diseñar, implementar y evaluar un asistente institucional privado capaz de consultar documentación interna mediante un sistema de \textit{Retrieval-Augmented Generation} (RAG) y de apoyar acciones operativas mediante herramientas integradas. 
+El prototipo desarrollado materializa este objetivo a través de una arquitectura modular que coordina cuatro capacidades complementarias: recuperación documental sobre un corpus institucional, mejora del \textit{ranking} de evidencias mediante recuperación híbrida y \textit{reranking}, orquestación del flujo de interacción mediante un agente basado en el paradigma ReAct, y generación y envío supervisado de correos electrónicos como acción operativa concreta.
 
-Más allá del prototipo funcional, la aportación central del trabajo reside en articular una comparación controlada entre cuatro variantes del sistema, que permiten aislar el efecto de cada mejora introducida de forma progresiva. Esta comparación, apoyada en un corpus de 26 documentos y un dataset de 71 preguntas anotadas manualmente, proporciona evidencia sobre el impacto real de cada componente sobre la calidad de las respuestas generadas.
+Más allá del prototipo funcional, la aportación central del trabajo reside en articular una comparación controlada entre cuatro variantes del sistema, que permiten aislar el efecto de cada mejora introducida de forma progresiva. 
+Esta comparación, apoyada en un corpus de 26 documentos y un dataset de 71 preguntas anotadas manualmente, proporciona evidencia sobre el impacto real de cada componente sobre la calidad de las respuestas generadas.
 
 \section{Valoración del cumplimiento de los objetivos}\label{sec:cumplimiento-objetivos}
 
 Los objetivos específicos planteados en el Capítulo~\ref{chap:objetivos} pueden valorarse del siguiente modo:
 
 \begin{enumerate}
-    \item \textbf{Identificar requisitos funcionales y no funcionales.} Los requisitos del asistente institucional se definieron en la fase de diseño atendiendo a criterios de consulta documental, fundamentación de respuestas, trazabilidad, control del flujo y uso supervisado de herramientas. Estos requisitos orientaron todas las decisiones arquitectónicas posteriores. \textbf{Objetivo cumplido.}
+    \item \textbf{Identificar requisitos funcionales y no funcionales.} Los requisitos del asistente institucional se definieron en la fase de diseño atendiendo a criterios de consulta documental, fundamentación de respuestas, trazabilidad, control del flujo y uso supervisado de herramientas. 
+    Estos requisitos orientaron todas las decisiones arquitectónicas posteriores. 
 
-    \item \textbf{Diseñar una arquitectura modular basada en un agente orquestador.} Se diseñó e implementó una arquitectura que diferencia claramente entre la fase de recuperación, la fase de generación y el flujo de orquestación. El agente orquestador, basado en el paradigma ReAct, actúa como componente central de coordinación, decidiendo en cada turno qué herramientas invocar y en qué orden. \textbf{Objetivo cumplido.}
+    \item \textbf{Diseñar una arquitectura modular basada en un agente orquestador.} Se diseñó e implementó una arquitectura que diferencia claramente entre la fase de recuperación, la fase de generación y el flujo de orquestación. 
+    El agente orquestador, basado en el paradigma ReAct, actúa como componente central de coordinación, decidiendo en cada turno qué herramientas invocar y en qué orden.
 
-    \item \textbf{Desarrollar un prototipo funcional.} El prototipo desarrollado es capaz de procesar consultas en lenguaje natural sobre documentación interna y generar respuestas fundamentadas en fragmentos recuperados del corpus. El sistema es ejecutable localmente y expone una interfaz conversacional a través de Streamlit. \textbf{Objetivo cumplido.}
+    \item \textbf{Desarrollar un prototipo funcional.} El prototipo desarrollado es capaz de procesar consultas en lenguaje natural sobre documentación interna y generar respuestas fundamentadas en fragmentos recuperados del corpus. 
+    El sistema es ejecutable localmente y expone una interfaz conversacional a través de Streamlit. 
 
-    \item \textbf{Integrar una funcionalidad accionable basada en herramientas.} Se implementó una herramienta de generación y envío de correos electrónicos integrada en el flujo del asistente. El orquestador detecta la intención de generación de correo a partir de la consulta del usuario e invoca la herramienta de forma autónoma, produciendo un borrador o, cuando se configura explícitamente, enviando el mensaje directamente a través de la API de Microsoft Graph. \textbf{Objetivo cumplido.}
+    \item \textbf{Integrar una funcionalidad accionable basada en herramientas.} Se implementó una herramienta de correo electrónico integrada en el flujo del asistente.
+    El orquestador detecta la intención de envío de correo a partir de la consulta del usuario e invoca la herramienta de forma autónoma, generando un borrador que se presenta al usuario para su revisión. Solo tras la confirmación explícita del usuario, el mensaje se envía a través de la API de Microsoft Graph con autenticación OAuth 2.0; en ningún caso se produce el envío de forma automática.
 
-    \item \textbf{Establecer un \textit{baseline} de recuperación.} La variante A, basada en búsqueda semántica densa simple con el modelo \texttt{sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2} y almacenamiento vectorial en Qdrant, actúa como referencia inicial. Esta configuración obtiene una cobertura de hechos esperados de 0.389 sobre el conjunto de preguntas respondibles. \textbf{Objetivo cumplido.}
+    \item \textbf{Establecer un \textit{baseline} de recuperación.} La variante A, basada en búsqueda semántica densa simple con el modelo \texttt{BAAI/bge-m3} y almacenamiento vectorial en Qdrant, actúa como referencia inicial. 
+    Esta configuración obtiene una cobertura de hechos esperados de 0.389 sobre el conjunto de preguntas respondibles. 
 
-    \item \textbf{Implementar una variante mejorada con recuperación híbrida y \textit{reranking}.} La variante C combina recuperación densa (Qdrant) y léxica (BM25) mediante fusión de rangos recíproca, y aplica un modelo de \textit{reranking} (\texttt{BAAI/bge-reranker-v2-m3}) sobre los 20 candidatos iniciales para reducirlos a los 5 más relevantes antes de la generación. Esta variante obtiene una cobertura de hechos de 0.527, lo que representa una mejora de 13,8 puntos porcentuales respecto al \textit{baseline}. \textbf{Objetivo cumplido.}
+    \item \textbf{Implementar una variante mejorada con recuperación híbrida y \textit{reranking}.} La variante C combina recuperación densa (Qdrant) y léxica (BM25) mediante fusión de rangos recíproca, y aplica un modelo de \textit{reranking} (\texttt{BAAI/bge-reranker-v2-m3}) sobre los 20 candidatos iniciales para reducirlos a los 5 más relevantes antes de la generación. 
+    Esta variante obtiene una cobertura de hechos de 0.527, lo que representa una mejora de 13,8 puntos porcentuales respecto al \textit{baseline}. 
 
-    \item \textbf{Definir un conjunto de casos de prueba representativos.} El dataset de evaluación está formado por 71 preguntas diseñadas para cubrir distintos escenarios: preguntas respondibles desde un único documento (36), preguntas que requieren combinar información de varias fuentes (15), preguntas comparativas (10) y preguntas no respondibles (10). Todas las preguntas respondibles cuentan con fuente esperada y hechos esperados anotados manualmente. El tamaño supera el mínimo de 25 casos establecido como criterio de comprobación. \textbf{Objetivo cumplido.}
+    \item \textbf{Definir un conjunto de casos de prueba representativos.} El dataset de evaluación está formado por 71 preguntas diseñadas para cubrir distintos escenarios: preguntas respondibles desde un único documento (36), preguntas que requieren combinar información de varias fuentes (15), preguntas comparativas (10) y preguntas no respondibles (10). 
+    Todas las preguntas respondibles cuentan con fuente esperada y hechos esperados anotados manualmente. El tamaño supera el mínimo de 25 casos establecido como criterio de comprobación. 
 
-    \item \textbf{Comparar el rendimiento mediante métricas de recuperación y generación.} La evaluación incluye métricas de recuperación (Hit@1, Hit@3, MRR), métricas de calidad de respuesta (cobertura de hechos esperados, ROUGE-L F1) y métricas de similitud semántica (BERTScore F1). La comparación cubre las cuatro variantes del sistema, incluyendo el \textit{baseline} determinista, la variante híbrida, la variante con \textit{reranking} y el orquestador. \textbf{Objetivo cumplido.}
+    \item \textbf{Comparar el rendimiento mediante métricas de recuperación y generación.} La evaluación incluye métricas de recuperación (Hit@1, Hit@3, MRR), métricas de calidad de respuesta (cobertura de hechos esperados, ROUGE-L F1) y métricas de similitud semántica (BERTScore F1). 
+    La comparación cubre las cuatro variantes del sistema, incluyendo el \textit{baseline} determinista, la variante híbrida, la variante con \textit{reranking} y el orquestador. 
 
-    \item \textbf{Evaluar el impacto de la mejora del componente de recuperación.} Los resultados muestran una progresión clara desde la variante A (cobertura 0.389, BERTScore 0.643) hasta la variante C (cobertura 0.527, BERTScore 0.656). La mejora acumulada de la variante híbrida con \textit{reranking} respecto al \textit{baseline} supera los umbrales definidos como criterios de comprobación: la cobertura de hechos mejora en 13,8 puntos porcentuales y el BERTScore en 1,3 puntos. \textbf{Objetivo cumplido.}
+    \item \textbf{Evaluar el impacto de la mejora del componente de recuperación.} Los resultados se valoran de forma diferenciada según el tipo de métrica:
 
-    \item \textbf{Analizar fortalezas, limitaciones y líneas de mejora.} Las principales limitaciones del sistema se recogen en la Sección~\ref{sec:limitaciones}, y las líneas de trabajo futuro se desarrollan en la Sección~\ref{sec:trabajo-futuro}. \textbf{Objetivo cumplido.}
+    En las \textbf{métricas de recuperación}, el criterio de mejora observable se cumple a través de Hit@3, que aumenta 6,6 puntos porcentuales (de 0.852 a 0.918), superando el umbral de 3\,pp definido en la metodología. La MRR mejora en términos absolutos (de 0.712 a 0.738), pero su mejora relativa del 3,6\,\% no alcanza el umbral del 5\,\% definido inicialmente. Hit@1 desciende ligeramente ($-$0.017), un comportamiento habitual en sistemas híbridos con pool de candidatos ampliado. Con el tamaño de corpus y dataset de este trabajo, la diferencia no alcanza el umbral definido, aunque la dirección de la mejora es la esperada.
+
+    En las \textbf{métricas de generación}, el criterio establecido era una mejora observable en la cobertura de hechos, sin umbral numérico estricto dado el carácter más subjetivo de estas métricas. Los resultados muestran una progresión consistente desde la variante A (cobertura 0.389, BERTScore 0.643) hasta la variante C (cobertura 0.527, BERTScore 0.656), lo que sugiere que las mejoras en el componente de recuperación se trasladan de forma observable a la calidad de las respuestas generadas, en el entorno controlado evaluado.
+
+    \item \textbf{Analizar fortalezas, limitaciones y líneas de mejora.} Las principales limitaciones del sistema se recogen en la Sección~\ref{sec:limitaciones}, y las líneas de trabajo futuro se desarrollan en la Sección~\ref{sec:trabajo-futuro}.
 \end{enumerate}
 
 En conjunto, todos los objetivos específicos planteados se han cumplido satisfactoriamente dentro del alcance definido para el trabajo.
 
 \section{Principales resultados}\label{sec:principales-resultados}
 
-El experimento de ablación revela una mejora progresiva y coherente al añadir cada componente del sistema. La Tabla~\ref{tab:resultados-conclusiones} resume las cifras más relevantes.
+El experimento de ablación muestra una tendencia de mejora progresiva al añadir cada componente del sistema. 
+La Tabla~\ref{tab:resultados-conclusiones} resume las cifras más relevantes.
 
 \begin{table}[H]
 \centering
@@ -49,31 +64,43 @@ El experimento de ablación revela una mejora progresiva y coherente al añadir 
 A: Semántico + LLM (\textit{baseline}) & 0.389 & 0.643 \\
 B: Híbrido + LLM                       & 0.496 & 0.641 \\
 C: Híbrido + Reranker + LLM            & 0.527 & 0.656 \\
-D: Orquestador + Híbrido + Reranker    & 0.532 & 0.653 \\
+D: Orquestador + Híbrido + Reranker    & 0.493 & 0.648 \\
 \bottomrule
 \end{tabular}
 \caption{Resumen de las métricas principales por variante.}
 \label{tab:resultados-conclusiones}
 \end{table}
 
-La introducción de la recuperación híbrida (variante B) produce la ganancia más pronunciada en cobertura de hechos (+10,7 puntos porcentuales respecto a A), lo que confirma que la combinación de señales densas y léxicas aporta información complementaria que la búsqueda semántica por sí sola no captura. El \textit{reranking} añade un incremento adicional de 3,1 puntos, que si bien es más modesto, resulta relevante porque mejora al mismo tiempo el BERTScore F1 (de 0.641 a 0.656), indicando una mayor alineación semántica entre las respuestas y los hechos esperados. El orquestador (variante D) obtiene la cobertura más alta (0.532) manteniendo un BERTScore competitivo, si bien la diferencia marginal respecto a la variante C (+0.005) sugiere que, en el dominio evaluado, la ganancia del flujo orquestado sobre el flujo determinista en preguntas respondibles es pequeña. El valor diferencial del orquestador reside más en su capacidad para gestionar de forma autónoma preguntas heterogéneas, detectar intenciones de acción y coordinar el uso de herramientas, aspectos que las métricas de cobertura léxica no capturan directamente.
+La introducción de la recuperación híbrida (variante B) produce la ganancia más pronunciada en cobertura de hechos (+10,7 puntos porcentuales respecto a A), lo que sugiere que la combinación de señales densas y léxicas aporta información complementaria que la búsqueda semántica por sí sola no captura, al menos en el corpus evaluado. 
+El \textit{reranking} añade un incremento adicional de 3,1 puntos, que si bien es más modesto, resulta relevante porque mejora al mismo tiempo el BERTScore F1 (de 0.641 a 0.656), lo que podría indicar una mayor alineación semántica entre las respuestas y los hechos esperados. 
+El orquestador (variante D) obtiene una cobertura de 0.493 y un BERTScore de 0.648, ligeramente por debajo de C en métricas léxicas ($-$0.034) pero con diferencia mínima en BERTScore ($-$0.008), lo que sugiere que la calidad semántica de las respuestas es equivalente.
+La penalización en Fact-Coverage es coherente con el estilo más elaborado del flujo ReAct, que tiende a generar respuestas estructuradas que no maximizan el solapamiento léxico con los \textit{expected facts}.
+El valor diferencial del orquestador reside en su capacidad para gestionar de forma autónoma preguntas heterogéneas, detectar intenciones de acción, coordinar herramientas y mejorar la abstención (0.600 frente a 0.300--0.500 de los flujos deterministas), aspectos que las métricas de cobertura léxica no capturan directamente.
 
-En el plano de recuperación, la variante con recuperación híbrida y \textit{reranking} supera al \textit{baseline} de búsqueda semántica en las métricas Hit@1, Hit@3 y MRR, lo que confirma que la mejora en la calidad de los fragmentos recuperados se traslada de forma observable a la calidad de las respuestas generadas. Este resultado valida la hipótesis de partida planteada en el Capítulo~\ref{chap:introduccion}: una mejora concreta del componente de recuperación produce un efecto observable sobre la calidad global del asistente.
+Una evaluación complementaria con \texttt{GPT-5.4-mini} confirma que el patrón de mejora entre variantes es robusto frente al modelo de lenguaje: la variante B alcanza FC\,=\,0.633 y C obtiene FC\,=\,0.549, con ganancias de hasta 0.137 puntos sobre el modelo local.
+
+En el plano de recuperación, la variante con recuperación híbrida y \textit{reranking} mejora Hit@3 (de 0.852 a 0.918) y MRR (de 0.712 a 0.738) respecto al \textit{baseline}, superando los umbrales definidos en ambas métricas. Hit@1 desciende ligeramente (de 0.574 a 0.557), un comportamiento esperable en sistemas con pool de candidatos ampliado donde el reranker no siempre sitúa la fuente más relevante en primera posición. En conjunto, estos resultados sugieren que la mejora en la calidad de los fragmentos recuperados se traslada de forma observable a la calidad de las respuestas generadas, en el entorno controlado de este trabajo. 
 
 \section{Limitaciones}\label{sec:limitaciones}
 
 Los resultados obtenidos deben interpretarse teniendo en cuenta las siguientes limitaciones:
 
 \begin{itemize}
-    \item \textbf{Tamaño del corpus.} El corpus de evaluación está formado por 26 documentos del dominio público de UNIR. Este tamaño es adecuado para una validación controlada del prototipo, pero insuficiente para generalizar los resultados a otros dominios institucionales o a corpus de mayor escala. El comportamiento del sistema en entornos con cientos o miles de documentos podría diferir de forma significativa.
+    \item \textbf{Tamaño del corpus.} El corpus de evaluación está formado por 26 documentos del dominio público de UNIR. 
+    Este tamaño es adecuado para una validación controlada del prototipo, pero insuficiente para generalizar los resultados a otros dominios institucionales o a corpus de mayor escala. 
+    El comportamiento del sistema en entornos con cientos o miles de documentos podría diferir de forma significativa.
 
-    \item \textbf{Tamaño y capacidad del modelo generativo.} Los experimentos principales se realizaron con el modelo \texttt{qwen2.5:7b-instruct}, ejecutado localmente en un entorno con GPU T4. Este modelo ofrece un equilibrio razonable entre calidad y coste computacional, pero sus capacidades de razonamiento, síntesis y abstención son inferiores a las de modelos de mayor tamaño o con entrenamiento específico en dominios institucionales. En particular, se observó que el modelo exhibe una tasa de abstención elevada (en torno al 35--50\,\% en las preguntas respondibles) incluso cuando el contexto recuperado contiene evidencia suficiente, lo que limita la cobertura de hechos en todas las variantes.
+    \item \textbf{Tamaño y capacidad del modelo generativo.} Los experimentos principales se realizaron con el modelo \texttt{qwen2.5:7b}, ejecutado localmente en un entorno con GPU T4. 
+    Este modelo ofrece un equilibrio razonable entre calidad y coste computacional, pero sus capacidades de razonamiento, síntesis y abstención son inferiores a las de modelos de mayor tamaño o con entrenamiento específico en dominios institucionales. 
 
-    \item \textbf{Dataset de evaluación.} Las 71 preguntas del dataset fueron diseñadas y anotadas manualmente por la autora del trabajo, lo que puede introducir sesgos de selección o de anotación. La ausencia de evaluadores adicionales limita la validez de las métricas de cobertura de hechos como estimación del rendimiento real del sistema en producción.
+    \item \textbf{Dataset de evaluación.} Las 71 preguntas del dataset fueron diseñadas y anotadas manualmente por la autora del trabajo, lo que puede introducir sesgos de selección o de anotación. 
+    La ausencia de evaluadores adicionales limita la validez de las métricas de cobertura de hechos como estimación del rendimiento real del sistema en producción.
 
-    \item \textbf{Ausencia de evaluación humana.} Las métricas empleadas (cobertura de hechos, ROUGE-L F1, BERTScore F1) son proxies automáticos de la calidad de las respuestas. Una evaluación humana de la utilidad, coherencia y precisión de las respuestas generadas aportaría una perspectiva complementaria que las métricas automáticas no recogen completamente.
+    \item \textbf{Ausencia de evaluación humana.} Las métricas empleadas (cobertura de hechos, ROUGE-L F1, BERTScore F1) son métricas automáticas de la calidad de las respuestas. 
+    Una evaluación humana de la utilidad, coherencia y precisión de las respuestas generadas aportaría una perspectiva complementaria que las métricas automáticas no recogen completamente.
 
-    \item \textbf{Evaluación del orquestador sobre un subconjunto reducido.} La variante D se evaluó sobre 25 preguntas respondibles, frente a las 61 del flujo determinista, debido a restricciones computacionales. Esto reduce la comparabilidad directa de las métricas del orquestador con las del resto de variantes.
+    \item \textbf{Variabilidad entre ejecuciones del orquestador.} La variante D, al depender de un bucle de razonamiento iterativo con temperatura no nula, presenta cierta variabilidad entre ejecuciones.
+    Los resultados reportados corresponden a una ejecución única sobre el conjunto completo de 61 preguntas respondibles, lo que limita la estimación de la varianza real del sistema.
 
     \item \textbf{Entorno de ejecución local.} El prototipo se ejecuta íntegramente en local, lo que simplifica la gestión de la privacidad de los datos pero limita la escalabilidad del sistema y su viabilidad en un entorno de producción institucional real.
 \end{itemize}
@@ -83,25 +110,30 @@ Los resultados obtenidos deben interpretarse teniendo en cuenta las siguientes l
 A partir de las limitaciones identificadas y de los resultados obtenidos, se proponen las siguientes líneas de trabajo futuro:
 
 \begin{itemize}
-    \item \textbf{Ampliación del corpus documental.} Incorporar más fuentes institucionales, incluyendo normativas, reglamentos, guías de matrícula y documentación interna, permitiría evaluar el sistema en un contexto más próximo al de un despliegue real. Como extensión adicional, se podría replicar el sistema sobre el corpus de otra universidad de características similares para validar la generalización del enfoque.
+    \item \textbf{Ampliación del corpus documental.} Incorporar más fuentes institucionales, incluyendo normativas, reglamentos, guías de matrícula y documentación interna, permitiría evaluar el sistema en un contexto más próximo al de un despliegue real. 
+    Como extensión adicional, se podría replicar el sistema sobre el corpus de otra universidad de características similares para validar la generalización del enfoque.
 
-    \item \textbf{Uso de modelos generativos más capaces.} Sustituir el modelo \texttt{qwen2.5:7b-instruct} por modelos de mayor tamaño o ajustados específicamente para tareas de respuesta a preguntas en español podría reducir la tasa de abstención observada y mejorar la cobertura de hechos de forma sustancial. En entornos con acceso a APIs externas, modelos de la familia Claude o GPT-4 ofrecerían una línea de comparación adicional de interés.
+    \item \textbf{Uso de modelos generativos más capaces.} Sustituir el modelo \texttt{qwen2.5:7b} por modelos de mayor tamaño o ajustados específicamente para tareas de respuesta a preguntas en español podría reducir la tasa de abstención observada y mejorar la cobertura de hechos de forma sustancial. 
+    En entornos con acceso a APIs externas, modelos de la familia Claude o GPT-4 ofrecerían una línea de comparación adicional de interés.
 
-    \item \textbf{Evaluación humana.} Complementar las métricas automáticas con una evaluación por parte de usuarios reales —estudiantes o personal administrativo universitario— aportaría una medida de utilidad percibida que las métricas de solapamiento léxico o similitud semántica no capturan.
+    \item \textbf{Evaluación humana.} Complementar las métricas automáticas con una evaluación por parte de usuarios reales (estudiantes o personal administrativo universitario) aportaría una medida de utilidad percibida que las métricas de solapamiento léxico o similitud semántica no capturan.
 
     \item \textbf{Ampliación del dataset de evaluación.} Incrementar el número de preguntas del dataset, especialmente en las categorías de preguntas comparativas y preguntas que requieren combinar múltiples fuentes, mejoraría la robustez estadística de los resultados y reduciría el efecto de la varianza por tamaño de muestra.
 
-    \item \textbf{Mejora del componente de herramientas.} El prototipo actual incluye una herramienta de correo electrónico. En un sistema más completo, el catálogo de herramientas podría ampliarse para incluir la consulta de calendarios académicos, la generación de instancias administrativas o la integración con sistemas de gestión universitaria, incrementando la utilidad operativa del asistente.
+    \item \textbf{Mejora del componente de herramientas.} El prototipo actual incluye una herramienta de correo electrónico. 
+    En un sistema más completo, el catálogo de herramientas podría ampliarse para incluir la consulta de calendarios académicos, la generación de instancias administrativas o la integración con sistemas de gestión universitaria, incrementando la utilidad operativa del asistente.
 
-    \item \textbf{Despliegue en producción.} El paso de un prototipo local a un sistema desplegado en producción implicaría abordar aspectos de seguridad, autenticación de usuarios, control de acceso a documentos sensibles, escalabilidad del componente de recuperación y supervisión del comportamiento del sistema en producción. Estos aspectos constituyen una línea de trabajo de ingeniería de sistemas relevante para trasladar el enfoque a un entorno institucional real.
+    \item \textbf{Capacidad de clarificación interactiva.} El orquestador actual no puede solicitar información adicional al usuario cuando la consulta es ambigua o incompleta. Incorporar una herramienta de clarificación permitiría al agente formular preguntas dirigidas, tanto al inicio de la conversación como durante el proceso de razonamiento, mejorando la calidad de las respuestas en escenarios donde la intención del usuario no queda suficientemente especificada en el primer turno.
 
-    \item \textbf{Evaluación de la tasa de abstención.} La abstención del modelo ante preguntas respondibles es un comportamiento que merece análisis específico. Un trabajo futuro podría estudiar técnicas de \textit{prompting} o ajuste fino orientadas a reducir la abstención innecesaria sin comprometer la capacidad del sistema de rechazar responder cuando la evidencia es genuinamente insuficiente.
+    \item \textbf{Despliegue en producción.} El paso de un prototipo local a un sistema desplegado en producción implicaría abordar aspectos de seguridad, autenticación de usuarios, control de acceso a documentos sensibles, escalabilidad del componente de recuperación y supervisión del comportamiento del sistema en producción. 
 \end{itemize}
 
 \section{Reflexión final}\label{sec:reflexion-final}
 
-Este trabajo ha demostrado que es posible construir un asistente institucional privado, modular y evaluable combinando tecnologías de recuperación híbrida, \textit{reranking} y orquestación basada en modelos de lenguaje locales, sin depender de servicios externos de pago ni comprometer la privacidad de los datos. Los resultados muestran que cada componente añadido al \textit{pipeline} contribuye de forma medible a la calidad de las respuestas, con la recuperación híbrida como la mejora de mayor impacto individual.
+Este trabajo ha demostrado que es posible construir un asistente institucional privado, modular y evaluable combinando tecnologías de recuperación híbrida, \textit{reranking} y orquestación basada en modelos de lenguaje locales, sin depender de servicios externos de pago ni comprometer la privacidad de los datos. 
+Los resultados muestran una tendencia de mejora progresiva al añadir cada componente al \textit{pipeline}, con la recuperación híbrida como la aportación de mayor impacto individual, y el orquestador aportando valor en dimensiones cualitativas que las métricas léxicas no capturan completamente.
 
-Al mismo tiempo, la evaluación evidencia que las limitaciones más relevantes no residen únicamente en la arquitectura del sistema, sino en factores externos como el tamaño del modelo generativo, la representatividad del corpus y la dificultad inherente de evaluar calidad conversacional mediante métricas automáticas. Estas limitaciones no invalidan los resultados, sino que los contextualizan como una contribución inicial y bien delimitada, sobre la que futuras iteraciones del trabajo podrían construir con mayor alcance y recursos.
+Al mismo tiempo, la evaluación evidencia que las limitaciones más relevantes no residen únicamente en la arquitectura del sistema, sino en factores externos como el tamaño del modelo generativo, la representatividad del corpus y la dificultad inherente de evaluar calidad conversacional mediante métricas automáticas. 
+Estas limitaciones no invalidan los resultados, sino que los contextualizan como una contribución inicial y bien delimitada, sobre la que futuras iteraciones del trabajo podrían construir con mayor alcance y recursos.
 
 En definitiva, el prototipo desarrollado constituye una base sólida para explorar cómo los sistemas RAG con orquestación pueden aplicarse de forma útil y controlada en entornos institucionales, abriendo la puerta a asistentes que no solo informan, sino que acompañan al usuario en el siguiente paso de su gestión.

@@ -16,7 +16,7 @@ Posteriormente, dichos fragmentos se representan mediante embeddings y se almace
 La fase online comienza cuando el usuario introduce una consulta en la interfaz conversacional. 
 A partir de esa entrada, el agente orquestador interpreta la petición y decide qué capacidades del sistema deben activarse. 
 En consultas informativas, el flujo principal consiste en recuperar evidencia documental relevante y generar una respuesta fundamentada. 
-En cambio, cuando la petición tiene una intención accionable, el orquestador puede activar una herramienta específica, como la generación de un borrador de correo.
+En cambio, cuando la petición tiene una intención accionable, el orquestador puede activar una herramienta específica, como la redacción y envío supervisado de un correo electrónico.
 
 La Figura~\ref{fig:arquitectura-general} muestra una visión global de esta arquitectura. 
 En ella se observa cómo la base documental alimenta la herramienta de recuperación, cómo el orquestador coordina las capacidades disponibles y cómo la capa de observabilidad permite registrar trazas del comportamiento del sistema durante la ejecución.
@@ -27,21 +27,15 @@ El flujo de ejecución del asistente parte de una consulta formulada en lenguaje
 La entrada se recibe a través de la interfaz conversacional y se envía al núcleo del sistema, donde el orquestador determina el tipo de tarea que debe resolverse. 
 Esta decisión condiciona el resto del proceso, ya que no todas las consultas requieren el mismo tratamiento.
 
-En el caso de preguntas informativas simples, el sistema sigue un flujo RAG directo. 
-Primero, la consulta se transforma en una representación adecuada para el recuperador. 
-Después, se buscan los fragmentos documentales más relevantes dentro de la base documental. 
-Finalmente, el modelo de lenguaje genera una respuesta utilizando como contexto la evidencia recuperada.
+\begin{itemize}
+    \item \textbf{Preguntas informativas simples.} El sistema sigue un flujo RAG directo: la consulta se transforma en una representación adecuada para el recuperador, se buscan los fragmentos documentales más relevantes dentro de la base documental y el modelo de lenguaje genera una respuesta utilizando como contexto la evidencia recuperada.
 
-Cuando la consulta requiere combinar información de varias fuentes, el sistema puede descomponer la pregunta en subconsultas o recuperar un conjunto más amplio de fragmentos candidatos. 
-Este comportamiento resulta útil en preguntas comparativas o en consultas que no pueden resolverse a partir de un único documento. 
-En estos casos, el objetivo no es únicamente recuperar un fragmento aislado, sino reunir evidencia suficiente para elaborar una respuesta más completa y estructurada.
+    \item \textbf{Preguntas que combinan varias fuentes.} El sistema puede descomponer la pregunta en subconsultas o recuperar un conjunto más amplio de fragmentos candidatos. Este comportamiento resulta útil en preguntas comparativas o en consultas que no pueden resolverse a partir de un único documento, donde el objetivo no es recuperar un fragmento aislado sino reunir evidencia suficiente para elaborar una respuesta más completa y estructurada.
 
-En las preguntas no respondibles, el sistema debe evitar generar una respuesta no fundamentada. 
-Por ello, si la evidencia recuperada no resulta suficiente o no guarda relación clara con la consulta, el flujo debe favorecer la abstención o una respuesta prudente que indique la falta de información disponible en el corpus. 
-Este comportamiento es especialmente importante en un asistente institucional, donde proporcionar información incorrecta podría afectar negativamente a la confianza del usuario.
+    \item \textbf{Preguntas no respondibles.} Si la evidencia recuperada no resulta suficiente o no guarda relación clara con la consulta, el flujo favorece la abstención o una respuesta prudente que indique la falta de información disponible en el corpus. Este comportamiento es especialmente importante en un asistente institucional, donde proporcionar información incorrecta podría afectar negativamente a la confianza del usuario.
 
-Por último, cuando la consulta expresa una intención accionable, como solicitar ayuda para redactar un correo formal, el orquestador activa la herramienta correspondiente. 
-En esta versión del prototipo, dicha acción se limita a la generación de un borrador, manteniendo siempre una separación explícita entre proponer una acción y ejecutarla realmente.
+    \item \textbf{Consultas con intención accionable.} Cuando la consulta expresa una intención accionable, como solicitar ayuda para redactar un correo formal, el orquestador activa la herramienta de correo electrónico. El sistema genera el borrador a partir de la consulta y el contexto recuperado, lo presenta al usuario para su revisión y, solo tras la confirmación explícita del usuario, realiza el envío a través de la API de Microsoft Graph. En ningún caso se produce el envío sin intervención humana previa.
+\end{itemize}
 
 \section{Papel del orquestador}\label{sec:papel-orquestador}
 
@@ -49,52 +43,48 @@ El agente orquestador actúa como componente de coordinación dentro del sistema
 Su función principal consiste en interpretar la consulta del usuario, decidir qué flujo de ejecución resulta más adecuado y activar las herramientas necesarias para resolver la tarea. 
 De este modo, el orquestador no sustituye al componente de recuperación ni al modelo de lenguaje, sino que organiza su uso dentro de una arquitectura controlada.
 
-Desde una perspectiva agéntica, cada consulta se trata como una tarea que puede requerir distintos pasos. 
-Algunas preguntas pueden resolverse mediante una recuperación documental directa, mientras que otras requieren comparar información, dividir la consulta en partes o activar una herramienta accionable. 
-El orquestador permite introducir esta lógica de decisión sin acoplarla directamente al recuperador ni al modelo generativo.
+El orquestador implementado sigue el paradigma ReAct \cite{yao2023react} (\textit{Reasoning + Acting}), propuesto por Yao et al. como alternativa a las arquitecturas que separan razonamiento y acción en fases independientes. 
+La idea central de ReAct es intercalar, dentro de un mismo bucle iterativo, trazas de razonamiento explícito con invocaciones a herramientas externas: el modelo no decide de antemano cuántas acciones ejecutará ni en qué orden, sino que infiere el siguiente paso a partir del resultado de la acción anterior, a diferencia de los \textit{pipelines} deterministas, en los que la secuencia de operaciones está fijada en tiempo de diseño y no puede adaptarse a la respuesta del entorno.
 
-El orquestador implementado sigue el paradigma ReAct \cite{yao2023react} (\textit{Reasoning + Acting}).
-En cada iteración del bucle, el LLM produce un bloque estructurado con un pensamiento (\textit{Pensamiento}), la herramienta seleccionada (\textit{Herramienta}) y su argumento (\textit{Entrada}).
+En cada iteración del bucle, el LLM produce un bloque estructurado con un \textit{Pensamiento}, la herramienta seleccionada (\textit{Herramienta}) y su argumento (\textit{Entrada}).
 El sistema ejecuta la herramienta y devuelve la observación al modelo, que la incorpora en el siguiente paso.
-Este ciclo \textit{Pensamiento $\to$ Acción $\to$ Observación} permite al orquestador razonar sobre la evidencia recuperada antes de decidir el siguiente paso, en lugar de seguir una secuencia fija predefinida.
+Este ciclo \textit{Pensamiento $\to$ Acción $\to$ Observación} se repite hasta que el modelo considera que dispone de evidencia suficiente para generar la respuesta o decide que la pregunta no es respondible, lo que permite al orquestador adaptar su comportamiento a cada consulta en lugar de seguir una secuencia fija predefinida.
 
 El conjunto de herramientas disponibles delimita el ámbito de actuación del asistente.
-La herramienta \texttt{buscar} permite recuperar fragmentos relevantes del corpus para una consulta concreta; puede invocarse varias veces con distintas reformulaciones.
-La herramienta \texttt{rechazar} señala que no existe evidencia suficiente para responder con rigor.
-La herramienta \texttt{redactar\_correo} genera un borrador de correo formal usando el contexto recuperado.
-La herramienta \texttt{responder} indica que el LLM considera que ya dispone de evidencia suficiente y delega la generación de la respuesta final al componente RAG base.
+\begin{enumerate}
+    \item \texttt{buscar}: recupera fragmentos relevantes del corpus para una consulta concreta; puede invocarse varias veces con distintas reformulaciones.
+    \item \texttt{rechazar}: señala que no existe evidencia suficiente para responder con rigor.
+    \item \texttt{redactar\_correo}: genera un borrador de correo formal usando el contexto recuperado.
+    \item \texttt{responder}: indica que el LLM considera que ya dispone de evidencia suficiente y delega la generación de la respuesta final al componente RAG base.
+\end{enumerate}
 Cualquier acción fuera de este conjunto es rechazada, convirtiendo al orquestador en una primera capa de \textit{guardrails} del sistema.
 
-Esta separación aporta trazabilidad y control al sistema.
-En lugar de generar siempre una respuesta del mismo modo, el asistente adapta el flujo a la naturaleza de la consulta, y cada paso del razonamiento queda registrado como una llamada a herramienta observable.
-Esto permite evaluar de forma independiente el impacto del orquestador sobre dimensiones como la abstención, la selección de herramientas y la estructuración de respuestas.
 
 \section{Herramientas disponibles}\label{sec:herramientas-disponibles}
 
-El sistema incorpora herramientas especializadas que pueden ser utilizadas por el orquestador durante la ejecución. 
-En el contexto de este trabajo, una herramienta se entiende como un componente externo al modelo de lenguaje que proporciona una capacidad concreta, como recuperar información documental o generar una salida accionable.
 
-La herramienta principal es la recuperación documental. 
-Esta herramienta permite consultar la base documental construida previamente y devolver los fragmentos más relevantes para la pregunta del usuario. 
+Una herramienta se entiende como un componente externo al modelo de lenguaje que proporciona una capacidad concreta.
+En este contexto, el sistema incorpora herramientas especializadas que pueden ser utilizadas por el orquestador durante la ejecución. 
+
+La herramienta principal es la recuperación documental, que permite consultar la base documental construida previamente y devolver los fragmentos más relevantes para la pregunta del usuario. 
 Su papel es fundamental en el sistema, ya que proporciona la evidencia necesaria para que las respuestas estén fundamentadas en información del corpus y no dependan únicamente del conocimiento paramétrico del modelo de lenguaje.
 
-La segunda herramienta es la generación de borradores de correo. 
-Esta funcionalidad permite transformar una consulta del usuario o una respuesta informativa previa en un texto formal orientado a una actuación posterior. 
-En esta versión del prototipo, la herramienta se mantiene en modo simulado o \textit{mockeado}: el sistema genera el borrador, pero no envía ningún mensaje real. 
-Esta decisión permite validar el flujo conversacional y la utilidad de la salida generada sin introducir riesgos asociados al envío automático de correos.
+La segunda herramienta es la generación y envío supervisado de correos electrónicos.
+Esta funcionalidad permite transformar una consulta del usuario o una respuesta informativa previa en un texto formal orientado a una actuación posterior.
+El sistema genera el borrador a partir del contexto recuperado y lo presenta al usuario para su revisión; en ningún caso se realiza el envío de forma automática.
+Solo tras la confirmación explícita del usuario, el mensaje se envía a través de la API de Microsoft Graph con autenticación OAuth 2.0, manteniendo en todo momento la intervención humana como requisito previo a cualquier acción real.
 
 El uso de herramientas se plantea de forma supervisada. 
-El asistente puede proponer una acción, preparar un borrador o estructurar una respuesta accionable, pero la ejecución efectiva queda bajo control del usuario. 
+El asistente puede proponer una acción, gestionar el envío supervisado de un correo o estructurar una respuesta accionable, pero la ejecución de estas herramientas queda bajo control del usuario. 
 Este enfoque resulta adecuado para un entorno institucional, donde es importante mantener trazabilidad, evitar acciones no deseadas y conservar la intervención humana en decisiones sensibles.
 
 \section{Variantes implementadas}\label{sec:variantes-implementadas}
 
-Con el fin de evaluar el impacto de los distintos componentes del sistema, se implementaron varias variantes del prototipo. 
-Estas variantes permiten comparar una configuración inicial sencilla con versiones que incorporan mejoras específicas en la recuperación documental o en el control del flujo mediante orquestación.
+Con el fin de evaluar el impacto de los distintos componentes del sistema, se implementaron varias variantes. 
+Estas permiten comparar una configuración inicial sencilla con versiones que incorporan mejoras específicas en la recuperación documental o en el control del flujo mediante orquestación.
 
-La primera variante corresponde al \textit{baseline} determinista. 
+La primera variante corresponde al \textit{baseline} determinista. Su principal objetivo es servir como punto de referencia para analizar el efecto de las mejoras posteriores.
 Esta configuración sigue un flujo RAG directo: recibe la consulta del usuario, recupera fragmentos mediante búsqueda semántica y genera una respuesta a partir del contexto obtenido. 
-Su objetivo es servir como punto de referencia para analizar el efecto de las mejoras posteriores.
 
 La segunda variante introduce una mejora en el componente de recuperación de información. 
 En este caso, la búsqueda semántica se complementa con recuperación léxica mediante BM25 y con una etapa posterior de \textit{reranking}. 
@@ -104,13 +94,10 @@ La tercera variante incorpora el agente orquestador basado en el paradigma ReAct
 En esta configuración, el LLM actúa como motor de decisión en un bucle iterativo: razona sobre la evidencia recuperada, decide qué herramienta invocar a continuación y continúa hasta tener suficiente información para responder o determinar que no existe evidencia en el corpus.
 Esta variante permite analizar el valor del orquestador en tareas como la abstención ante preguntas no respondibles, la identificación de solicitudes accionables, la reformulación iterativa de consultas y la activación de herramientas especializadas.
 
-Estas variantes se implementan de forma configurable, permitiendo activar o desactivar componentes como la recuperación híbrida, el \textit{reranking} o el orquestador. 
-Esta decisión facilita la comparación experimental posterior, ya que cada configuración puede ejecutarse sobre el mismo corpus y el mismo conjunto de consultas de evaluación.
+Estas variantes se implementan de forma configurable, permitiendo activar o desactivar las componentes para facilitar la comparación experimental posterior, ya que cada configuración puede ejecutarse sobre el mismo corpus y el mismo conjunto de consultas de evaluación.
 
-Una vez descrito el diseño general del sistema, las siguientes secciones presentan las principales tecnologías utilizadas para implementar el prototipo. 
-La selección se ha realizado atendiendo a criterios de modularidad, facilidad de integración, bajo coste, posibilidad de ejecución local y adecuación al desarrollo de sistemas basados en recuperación de información y modelos de lenguaje.
 
-\section{Lenguaje y entorno de desarrollo y ejecución}\label{sec:entorno-desarrollo}
+\section{Lenguaje y entorno de desarrollo}\label{sec:entorno-desarrollo}
 
 \subsection{Python}\label{subsec:python}
 
@@ -118,90 +105,84 @@ El lenguaje principal del proyecto es Python.
 Esta elección se debe a su amplia adopción en el ámbito de la inteligencia artificial, el procesamiento del lenguaje natural y la computación científica. 
 Su ecosistema incluye bibliotecas consolidadas para el tratamiento de datos, el aprendizaje automático y el uso de modelos de lenguaje, como NumPy, SciPy, scikit-learn o Transformers \cite{harris2020array, virtanen2020scipy, pedregosa2011scikit, wolf2020transformers}. 
 Esta disponibilidad de herramientas resulta especialmente adecuada para un prototipo basado en RAG, donde es necesario integrar procesamiento documental, generación de embeddings, recuperación semántica, reranking, evaluación y conexión con modelos generativos.
-Además, el uso de entornos virtuales y variables de configuración permite aislar dependencias y modificar parámetros del sistema sin alterar el código fuente, lo que facilita la reproducibilidad de las pruebas.
 
-Frente a lenguajes como Java o Go, Python ofrece una curva de desarrollo más rápida y una integración más directa con las principales librerías utilizadas en proyectos de NLP y aprendizaje automático. 
-Java y Go son alternativas robustas para servicios backend con altos requisitos de concurrencia, mantenibilidad o rendimiento. 
+Por otro lado, nos encontramos con Java y Go, que son alternativas robustas para servicios backend con altos requisitos de concurrencia, mantenibilidad o rendimiento. 
 Sin embargo, en este trabajo el objetivo principal no es optimizar una infraestructura de producción, sino diseñar, implementar y evaluar distintas variantes de una arquitectura RAG. 
 
 También se ha valorado el uso de lenguajes de menor nivel, como C++, que podrían aportar ventajas en términos de rendimiento. 
 No obstante, gran parte del coste computacional del sistema recae en la inferencia de modelos, la generación de embeddings y las consultas al almacén vectorial, componentes que ya suelen estar implementados mediante bibliotecas optimizadas o servicios externos.
- Por tanto, utilizar C++ para la lógica de orquestación o experimentación aumentaría la complejidad del desarrollo sin aportar una mejora proporcional al objetivo del prototipo.
+Por tanto, utilizar C++ para la lógica de orquestación o experimentación aumentaría la complejidad del desarrollo sin aportar una mejora proporcional al objetivo del prototipo.
 
-Otro aspecto relevante es la reproducibilidad. 
-Python permite aislar dependencias mediante entornos virtuales, de forma que cada entorno puede mantener sus propios paquetes y versiones sin interferir con la instalación global del sistema \cite{pep405}. 
+Un último aspecto relevante es la reproducibilidad. Python permite aislar dependencias mediante entornos virtuales, de forma que cada entorno puede mantener sus propios paquetes y versiones sin interferir con la instalación global del sistema \cite{pep405}. 
 Esta característica facilita la ejecución controlada del prototipo, la comparación entre variantes experimentales y la futura replicación del trabajo.
 
 \subsection{Docker}\label{subsec:docker}
 
 Docker se utiliza como tecnología de contenedorización para ejecutar de forma aislada los servicios auxiliares del sistema. 
-En el contexto de este proyecto, su uso permite levantar componentes como Qdrant, utilizado como base de datos vectorial, y Phoenix, empleado para la observabilidad del pipeline, sin instalarlos directamente sobre el sistema operativo anfitrión.
+En este caso, su uso permite levantar componentes como Qdrant, utilizado como base de datos vectorial, y Phoenix, empleado para la observabilidad del pipeline, sin instalarlos directamente sobre el sistema operativo anfitrión.
 
-Para la definición y ejecución de estos servicios se emplea Docker Compose, que permite describir en un único fichero de configuración los servicios, redes y volúmenes necesarios para una aplicación multicontenedor \cite{dockerCompose}. 
+Para la definición y ejecución de estos servicios se emplea Docker Compose \cite{dockerCompose}, con un único fichero de configuración que define los servicios, redes y volúmenes necesarios para una aplicación multicontenedor. 
 El uso de volúmenes permite conservar información entre ejecuciones, evitando que datos como las colecciones vectoriales o las trazas generadas se pierdan al detener o recrear los contenedores \cite{dockerVolumes}. 
-Esta característica resulta especialmente útil en un prototipo RAG, donde es necesario mantener el estado de servicios persistentes durante las fases de ingesta, evaluación y experimentación.
-
-En comparación con una instalación manual de cada servicio, Docker reduce la dependencia de configuraciones específicas del equipo de desarrollo y simplifica la preparación del entorno. 
+Es extremadamente útil en un prototipo RAG, donde es necesario mantener el estado de servicios persistentes durante las fases de ingesta, evaluación y experimentación.
 
 \section{Procesamiento documental}\label{sec:procesamiento-documental}
 
-El procesamiento documental constituye una fase esencial del sistema, ya que condiciona la calidad de la información que posteriormente será recuperada por el modelo. 
+El procesamiento documental constituye una fase esencial ya que afecta directamente a la calidad de la información que posteriormente será recuperada por el modelo. 
 En este proyecto, dicha fase incluye la obtención de documentos, su conversión a un formato homogéneo y su segmentación en fragmentos adecuados para la recuperación semántica.
 
 \subsection{Obtención del corpus y scraping web}\label{subsec:obtencion-corpus}
 
-El corpus del proyecto se construye exclusivamente a partir de información disponible en URLs públicas del dominio institucional. Para ello, se desarrolló un proceso de scraping propio basado en \textit{httpx} y \textit{BeautifulSoup}. La primera librería se utilizó para realizar peticiones HTTP de forma controlada, mientras que la segunda permitió analizar el contenido HTML, extraer el texto principal de las páginas y eliminar elementos no relevantes para la recuperación, como menús de navegación, pies de página, scripts o bloques puramente visuales.
+El corpus del proyecto se construye exclusivamente a partir de información disponible en URLs públicas del dominio institucional. 
+Para ello, se desarrolló un proceso de scraping propio basado en \textit{httpx} y \textit{BeautifulSoup}. 
+La primera librería se utilizó para realizar peticiones HTTP de forma controlada, mientras que la segunda permitió analizar el contenido HTML, extraer el texto principal de las páginas y eliminar elementos no relevantes para la recuperación, como menús de navegación, pies de página, scripts o bloques puramente visuales.
 
-El proceso de obtención del corpus no se planteó como un crawler generalista, sino como una recopilación acotada y reproducible de fuentes alineadas con el caso de uso del asistente institucional. Para ello, se partió de un conjunto inicial de URLs semilla seleccionadas manualmente por su relevancia para consultas habituales del dominio universitario, incluyendo información sobre trámites académicos, prácticas, becas, normativas, procedimientos administrativos y servicios para estudiantes.
+El proceso de obtención del corpus se planteó como una recopilación acotada y reproducible de fuentes relacionadas con el caso de uso del asistente institucional. 
+Para ello, se partió de un conjunto inicial de URLs semilla seleccionadas manualmente por su relevancia para consultas habituales del dominio universitario, incluyendo información sobre trámites académicos, prácticas y becas entre otras.
 
-Durante la recopilación se aplicaron criterios de inclusión y exclusión. Se incluyeron aquellas páginas que contenían información institucional textual, estable, verificable y potencialmente útil para responder preguntas del usuario. En cambio, se descartaron páginas que no superaban un umbral mínimo de 80 palabras de contenido útil tras la limpieza del HTML, páginas cuyo contenido quedaba compuesto mayoritariamente por elementos de navegación, banners o bloques visuales sin valor informativo, y páginas con contenido promocional o de actualidad desconectado del dominio de consulta. Esta selección permitió construir un corpus más reducido, pero más controlado y coherente con los objetivos experimentales del trabajo.
+Durante la recopilación se aplicaron criterios de inclusión y exclusión. 
+Se incluyeron las páginas con información institucional textual, estable, verificable y potencialmente útil para responder preguntas del usuario. 
+En cambio, se descartaron páginas que no superaban un umbral mínimo de 80 palabras de contenido útil tras la limpieza del HTML, páginas cuyo contenido que mayormente tenían elementos de navegación, banners o imágenes sin valor informativo. 
+Esta selección permitió construir un corpus más reducido, pero más controlado y coherente con los objetivos experimentales del trabajo.
 
-El proceso de limpieza del HTML incluyó la eliminación sistemática de etiquetas de navegación (\texttt{nav}), cabeceras (\texttt{header}), pies de página (\texttt{footer}), formularios, barras laterales y bloques de JavaScript o CSS. Adicionalmente, se filtraron bloques HTML con atributos de clase o identificador asociados a patrones habituales de ruido en sitios web institucionales, como menús, \textit{banners}, gestión de \textit{cookies}, noticias, eventos, contenido social o elementos promocionales. Tras este proceso, únicamente se conservó el contenido principal de cada página, extraído preferentemente del elemento \texttt{main} o \texttt{article} cuando estuvo disponible. El cumplimiento del fichero \texttt{robots.txt} se verificó antes de cada descarga y se respetó un retardo mínimo entre peticiones para no sobrecargar los servidores.
+El proceso de limpieza del HTML tenía como objetivo conservar el contenido principal de cada página. Para ello, se eliminaron etiquetas de navegación, cabeceras, pies de página, barras laterales y bloques de JavaScript o CSS. 
+Se filtraron bloques HTML con atributos de clase o patrones habituales de ruido en sitios web institucionales, como menús, \textit{banners}, gestión de \textit{cookies}, eventos, contenido social o elementos promocionales. 
+La descarga se realizó respetando las políticas de acceso de cada sitio e introduciendo pausas entre peticiones para no sobrecargar los servidores.
 
-Como resultado, de las 30 páginas descargadas correctamente, 4 fueron descartadas: tres no alcanzaron el umbral mínimo de palabras tras la limpieza y una presentó contenido mayoritariamente visual o estructural sin texto útil recuperable. Los 26 documentos restantes constituyen el corpus final empleado en la evaluación.
-
-Además, el proceso se diseñó teniendo en cuenta criterios de reproducibilidad y trazabilidad. Cada documento recuperado conserva metadatos asociados a su fuente original, como la URL, el título, la categoría temática y el identificador del documento. Estos metadatos permiten posteriormente relacionar cada fragmento recuperado con su origen, analizar errores de recuperación y mostrar las fuentes utilizadas en las respuestas generadas por el asistente.
-
-Como resultado de este proceso, el corpus final quedó formado por documentos institucionales públicos transformados a un formato textual homogéneo y preparados para su segmentación e indexación. Esta fase resulta especialmente relevante dentro del proyecto, ya que la calidad del corpus condiciona directamente la calidad de la recuperación documental y, por tanto, la fundamentación de las respuestas generadas por el sistema.
+Como resultado, de las 30 páginas descargadas correctamente, 4 fueron descartadas: tres no alcanzaron el umbral mínimo de palabras tras la limpieza y una presentó contenido mayoritariamente visual o estructural sin texto útil recuperable. 
+Cada documento recuperado conserva metadatos asociados a su fuente original, como la URL, el título, la categoría temática y el identificador del documento. 
+Estos metadatos permiten posteriormente relacionar cada fragmento recuperado con su origen, analizar errores de recuperación y mostrar las fuentes utilizadas en las respuestas generadas por el asistente.
 
 \begin{table}[H]
 \centering
 \begin{tabular}{lr}
-\hline
+\toprule
 \textbf{Elemento} & \textbf{Valor} \\
-\hline
+\midrule
 URLs semilla consideradas & 30 \\
 Páginas descargadas correctamente & 30 \\
 Páginas descartadas durante la limpieza & 4 \\
 Documentos finales incorporados al corpus & 26 \\
+\midrule
 Formato final de almacenamiento & Markdown \\
-Tamaño medio de documento & 1557,92 palabras \\
-Chunks generados & 520 \\
-Tamaño medio de chunk & 851 caracteres \\
-\hline
+Tamaño medio de documento & 1.557 palabras \\
+\textit{Chunks} generados & 520 \\
+Tamaño medio de \textit{chunk} & 851 caracteres \\
+\bottomrule
 \end{tabular}
 \caption{Resumen del proceso de construcción del corpus documental.}
 \label{tab:resumen_corpus}
 \end{table}
 
-\subsection{Conversión y normalización de documentos}\label{subsec:conversion-normalizacion}
+\subsection{Normalización, segmentación y metadatos}\label{subsec:chunking-metadatos}
 
-Una vez obtenidos los documentos, se aplica un proceso de normalización para reducir la heterogeneidad entre formatos. 
-Las páginas HTML se convierten a Markdown mediante \texttt{markdownify}, lo que permite conservar una estructura textual sencilla y legible, eliminando al mismo tiempo elementos propios de la presentación web que no aportan información relevante para la recuperación \cite{markdownify}.
+Las páginas descargadas se convierten a Markdown mediante \texttt{markdownify} \cite{markdownify}, lo que permite obtener una representación textual sencilla y legible, eliminando los elementos propios de la presentación web sin valor informativo. 
+El resultado son ficheros \texttt{.md} enriquecidos con los metadatos en la cabecera (título, URL de origen e identificador de documento) que facilitan la trazabilidad durante la recuperación.
 
-En el caso de documentos PDF, se utiliza PyMuPDF, una librería orientada a la extracción, análisis y manipulación de documentos PDF desde Python \cite{pymupdf}.
-A diferencia de las fuentes HTML, los documentos PDF no se convierten a formato Markdown: su contenido textual se extrae directamente como texto plano, sin ninguna conversión de formato intermedia.
-Los ficheros de texto plano y Markdown se procesan directamente en su formato original.
-En definitiva, el formato Markdown se aplica exclusivamente a los documentos procedentes del \textit{scraping} web, donde el proceso genera ficheros \texttt{.md} enriquecidos con metadatos en cabecera; para las fuentes PDF o de texto plano, el contenido se trata directamente sin conversión adicional.
-Este flujo permite transformar distintas fuentes en texto recuperable, facilitando las etapas posteriores de segmentación e indexación.
-
-\subsection{Segmentación del corpus y metadatos}\label{subsec:chunking-metadatos}
-
-Tras la normalización, los documentos se dividen en fragmentos o \textit{chunks}. 
+A continuación, los documentos se dividen en \textit{chunks}. 
 Esta segmentación es necesaria porque los modelos de embeddings y los modelos generativos trabajan con límites de contexto, y porque la recuperación resulta más precisa cuando se indexan unidades de información de tamaño controlado en lugar de documentos completos.
 
 En este proyecto, la segmentación sigue una estrategia jerárquica orientada a preservar la coherencia semántica de los textos.
-En primer lugar, el documento se divide por límites de párrafo, identificados como bloques separados por una o más líneas en blanco.
+El documento se divide por límites de párrafo, identificados como bloques separados por una o más líneas en blanco.
 Si un párrafo supera el tamaño máximo de fragmento establecido (900 caracteres), se aplica una segunda división por oraciones mediante el reconocimiento de signos de puntuación terminal.
 En caso de que una oración individual resulte todavía demasiado larga, se recurre a una división por palabras como último recurso.
 Los fragmentos resultantes se construyen acumulando unidades hasta alcanzar el tamaño objetivo de 800 caracteres, con un margen entre 600 y 900 caracteres.
@@ -218,21 +199,20 @@ Además, cada fragmento conserva metadatos asociados a su documento de origen, l
 \section{Almacenamiento vectorial}\label{sec:almacenamiento-vectorial}
 
 En los sistemas RAG, el almacenamiento vectorial permite guardar las representaciones numéricas de los fragmentos documentales y recuperarlos posteriormente mediante búsqueda por similitud semántica. 
-Para esta función se ha seleccionado Qdrant, una base de datos vectorial orientada a la búsqueda semántica y al almacenamiento de vectores junto con información adicional o \textit{payload} \cite{qdrantDocs}.
+Para esta función se ha seleccionado Qdrant \cite{qdrantDocs}, una base de datos vectorial orientada a la búsqueda semántica y al almacenamiento de vectores junto con información adicional o \textit{payload}.
 
-La elección de Qdrant se justifica por varias razones. 
-En primer lugar, permite ejecutarse de forma local mediante Docker, lo que encaja con el enfoque de bajo coste y control del entorno planteado para el prototipo. 
-En segundo lugar, ofrece persistencia de datos, filtrado por metadatos y una API de consulta que facilita su integración con el pipeline RAG. 
+Qdrant se puede ejecutar de forma local mediante Docker, lo que encaja con el enfoque de bajo coste y control del entorno planteado. 
+Además ofrece persistencia de datos, filtrado por metadatos y una API de consulta que facilita su integración con el pipeline RAG. 
 Estas características resultan especialmente útiles cuando se desea recuperar fragmentos no solo por similitud vectorial, sino también teniendo en cuenta información asociada a la fuente, el documento o la categoría del contenido.
 
 Se valoraron otras alternativas ampliamente utilizadas en el ámbito de la recuperación vectorial. 
-FAISS constituye una opción eficiente para búsqueda de similitud y clustering sobre vectores densos, pero se plantea principalmente como una librería y no como una base de datos vectorial completa con servicio persistente y API propia \cite{faissDocs}. 
-Chroma, por su parte, ofrece una solución sencilla para almacenar embeddings, realizar búsquedas vectoriales y filtrar por metadatos \cite{chromaDocs}. 
+FAISS \cite{faissDocs} constituye una opción eficiente para búsqueda de similitud y clustering sobre vectores densos, pero se plantea principalmente como una librería y no como una base de datos vectorial completa con servicio persistente y API propia. 
+Chroma \cite{chromaDocs} , por su parte, ofrece una solución sencilla para almacenar embeddings, realizar búsquedas vectoriales y filtrar por metadatos . 
 Sin embargo, Qdrant se ajusta mejor a las necesidades del proyecto al proporcionar una separación más clara entre el servicio de almacenamiento vectorial y el resto de componentes del sistema.
 
-También se consideraron soluciones como Pinecone y Weaviate. 
-Pinecone ofrece una base de datos vectorial gestionada orientada a aplicaciones de IA en producción \cite{pineconeDocs}, mientras que Weaviate proporciona una base de datos vectorial de código abierto con capacidades de búsqueda semántica e híbrida \cite{weaviateDocs}. 
-No obstante, para este trabajo se prioriza una solución que pueda ejecutarse localmente, sin costes asociados por uso y con suficiente flexibilidad para las fases de ingesta, recuperación y evaluación. 
+Por otro lado, Pinecone \cite{pineconeDocs} ofrece una base de datos vectorial gestionada orientada a aplicaciones de IA en producción, pero requiere conectividad a un servicio externo de pago, lo que lo descarta para un despliegue local y privado.
+Aunque Weaviate \cite{weaviateDocs} proporciona una base de datos vectorial de código abierto con capacidades de búsqueda semántica e híbrida, exige ejecutar un servidor independiente con un consumo de recursos notable, y no dispone de un modo embebido que permita instanciarlo directamente desde Python sin levantar un proceso adicional. 
+
 
 La Tabla~\ref{tab:comparativa_vectoriales} resume las principales características de las alternativas consideradas.
 
@@ -249,7 +229,7 @@ Pinecone & BD vectorial gestionada & Sí (cloud) & Sí & No \\
 Weaviate & BD vectorial OSS & Sí & Sí & Sí \\
 \hline
 \end{tabular}
-\caption{Comparativa de bases de datos vectoriales consideradas para el proyecto.}
+\caption{Comparativa de bases de datos vectoriales consideradas.}
 \label{tab:comparativa_vectoriales}
 \end{table}
 
@@ -260,18 +240,20 @@ Esta representación es uno de los componentes principales de una arquitectura R
 
 \subsection{BGE-M3}\label{subsec:embeddings}
 
-Para la generación de embeddings se ha seleccionado BGE-M3, publicado por el Beijing Academy of Artificial Intelligence (BAAI) e integrado mediante la librería \texttt{SentenceTransformers} \cite{chen2024bgem3}.
+Para la generación de embeddings se ha seleccionado BGE-M3 \cite{chen2024bgem3}, publicado por el Beijing Academy of Artificial Intelligence (BAAI) e integrado mediante la librería \texttt{SentenceTransformers}.
 Este modelo ha sido diseñado para tareas de recuperación multilingüe y destaca por su triple enfoque: \textit{multi-lingual} (soporte para más de cien idiomas), \textit{multi-functionality} (capacidad para producir representaciones densas, dispersas y multi-vector) y \textit{multi-granularity} (ventana de contexto de hasta 8192 tokens).
 
 Desde el punto de vista arquitectónico, BGE-M3 utiliza XLM-RoBERTa-Large como columna vertebral, lo que resulta en aproximadamente 570 millones de parámetros.
 Su salida por defecto es un vector denso de 1024 dimensiones que captura el significado semántico del texto de entrada y puede compararse mediante similitud coseno con los vectores de los fragmentos del corpus.
-Esta arquitectura permite, además, combinar la representación densa con señales de recuperación dispersa o multi-vector cuando el pipeline lo requiere.
 
-Se evaluaron otras alternativas antes de seleccionar BGE-M3.
-\textit{multilingual-e5-large}, de Microsoft, ofrece un tamaño inferior (560 millones de parámetros, vectores de 1024 dimensiones) con un buen rendimiento multilingüe, pero su cobertura en español es más limitada que la de BGE-M3 en benchmarks de recuperación \cite{wang2024multilingual}.
-Modelos como \textit{paraphrase-multilingual-mpnet-base-v2} son más ligeros (278 millones de parámetros, 768 dimensiones), pero su capacidad de representación semántica es inferior para tareas de recuperación precisas.
-Las APIs de embeddings de OpenAI (\textit{text-embedding-3-small} y \textit{text-embedding-3-large}) ofrecen alta calidad, pero introducen dependencia de servicios externos y coste por uso, lo que resulta incompatible con el enfoque de ejecución local y bajo coste del prototipo.
-En conjunto, BGE-M3 ofrece el mejor equilibrio entre calidad de recuperación, soporte del español, tamaño manejable y posibilidad de ejecución local para los objetivos del proyecto.
+Antes de seleccionar BGE-M3 se evaluaron otras alternativas.
+
+\begin{itemize}
+    \item \textbf{\textit{multilingual-e5-large} (Microsoft):} tamaño similar (560M parámetros, 1024 dimensiones) con buen rendimiento multilingüe, pero cobertura en español más limitada en benchmarks de recuperación \cite{wang2024multilingual}.
+    \item \textbf{\textit{paraphrase-multilingual-mpnet-base-v2}:} modelo más ligero (278M parámetros, 768 dimensiones), con menor capacidad de representación semántica para tareas de recuperación precisas.
+    \item \textbf{APIs de OpenAI (\textit{text-embedding-3-small}/\textit{large}):} alta calidad, pero con dependencia de servicios externos y coste por uso, incompatible con el enfoque de ejecución local del prototipo.
+\end{itemize}
+
 
 \section{Recuperación de información}\label{sec:recuperacion-informacion}
 
@@ -282,12 +264,10 @@ En el prototipo se contempla una recuperación densa basada en embeddings y una 
 
 La recuperación semántica se realiza generando el embedding de la consulta y comparándolo con los vectores previamente almacenados en la base de datos vectorial. 
 De esta forma, el sistema puede recuperar fragmentos relacionados por significado, aunque no compartan exactamente los mismos términos que la pregunta del usuario.
+Las consultas en un asistente conversacional suelen formularse de forma natural y diferir de la redacción exacta de los documentos del corpus, por lo que una recuperación de estas características es clave para capturar la intención del usuario y proporcionar contexto relevante al modelo generativo.
 
-Este enfoque resulta especialmente útil en un asistente conversacional, ya que las consultas suelen formularse de manera natural y pueden diferir de la redacción exacta presente en los documentos del corpus.
-
-Cabe señalar que en los agentes conversacionales es habitual incorporar una etapa previa de \textit{query rewriting}, consistente en reformular la consulta del usuario antes de lanzarla contra el índice documental \cite{ma2023queryrewriting}.
-Esta técnica permite adaptar el lenguaje natural de la pregunta al vocabulario del corpus, desambiguar referencias contextuales en conversaciones de múltiples turnos y mejorar la cobertura de recuperación.
-En el prototipo presentado se implementa una variante de \textit{query rewriting} activable mediante un parámetro de configuración.
+En los agentes conversacionales es habitual incorporar una etapa previa de \textit{query rewriting} \cite{ma2023queryrewriting}, para reformular la consulta del usuario antes de lanzarla contra el índice documental.
+En este trabajo se implementa una variante de \textit{query rewriting} activable mediante un parámetro de configuración.
 Cuando está activada, el LLM recibe la pregunta original y produce una consulta reformulada antes de lanzarla contra el índice, mejorando la cobertura en casos donde la formulación del usuario difiere del vocabulario del corpus.
 En el modo de orquestador ReAct, el propio LLM decide de forma iterativa qué consultas realizar, de modo que la reformulación queda integrada en el bucle de razonamiento y no se aplica como etapa previa independiente.
 
@@ -304,9 +284,92 @@ BM25 asigna a cada documento $D$ una puntuación respecto a una consulta $Q$ con
 
 donde $f(q_i, D)$ es la frecuencia del término $q_i$ en el documento $D$, $|D|$ es la longitud del documento en número de términos, $\text{avgdl}$ es la longitud media de los documentos de la colección, $k_1$ y $b$ son hiperparámetros de ajuste (valores típicos: $k_1 = 1{,}5$, $b = 0{,}75$), e $\text{IDF}(q_i) = \log\frac{N - n(q_i) + 0{,}5}{n(q_i) + 0{,}5}$ penaliza los términos que aparecen en muchos documentos, siendo $N$ el número total de documentos y $n(q_i)$ el número de documentos que contienen el término $q_i$.
 
-Este mecanismo tiene dos propiedades relevantes para el sistema. El factor IDF premia los términos infrecuentes en la colección, como nombres de trámites, titulaciones o conceptos administrativos específicos, que suelen ser señales discriminativas en consultas institucionales. El factor de normalización por longitud evita que los documentos más largos sean sistemáticamente favorecidos frente a documentos más cortos pero igualmente relevantes.
+Este mecanismo tiene dos propiedades relevantes para el sistema. 
+El factor IDF premia los términos infrecuentes en la colección, como nombres de trámites, titulaciones o conceptos administrativos específicos, que suelen ser señales discriminativas en consultas institucionales. 
+El factor de normalización por longitud evita que los documentos más largos sean sistemáticamente favorecidos frente a documentos más cortos pero igualmente relevantes.
 
-En la variante híbrida, las puntuaciones de BM25 y de similitud vectorial se normalizan de forma independiente y se combinan mediante una suma ponderada con pesos ajustables. Esta combinación permite equilibrar las ventajas de la búsqueda semántica —que captura relaciones por significado incluso sin coincidencia léxica— con la precisión de BM25 ante términos específicos, mejorando la robustez del sistema ante distintos tipos de preguntas.
+En la variante híbrida, las listas de resultados de BM25 y de similitud vectorial se fusionan mediante \textit{Reciprocal Rank Fusion} (RRF) \cite{cormack2009reciprocal}, una técnica basada en posiciones de ranking en lugar de puntuaciones absolutas.
+Cada candidato recibe una puntuación proporcional al recíproco de su posición en cada lista ($1/(k + \text{rango})$, con $k=60$), y las contribuciones de ambas ramas se suman con pesos ajustables (por defecto, 0,5 para cada una).
+Esta combinación permite equilibrar las ventajas de la búsqueda semántica —que captura relaciones por significado incluso sin coincidencia léxica— con la precisión de BM25 ante términos específicos, mejorando la robustez del sistema ante distintos tipos de preguntas.
+
+\section{Mejora de la recuperación mediante reranking}\label{sec:reranking}
+
+El reranking se introduce como una segunda etapa de recuperación.
+Tras obtener un conjunto inicial de fragmentos candidatos mediante recuperación semántica o híbrida, un modelo adicional vuelve a ordenar dichos fragmentos en función de su relevancia respecto a la consulta.
+Esta etapa permite corregir el orden inicial cuando los métodos de primera etapa no han situado los fragmentos más relevantes en las posiciones superiores del ranking.
+
+Los modelos de reranking pueden clasificarse en tres categorías según su estrategia de puntuación \cite{liu2009learning}:
+
+\begin{itemize}
+    \item \textbf{\textit{Pointwise}:} asignan una puntuación independiente a cada par (consulta, fragmento), tratando el problema como una tarea de clasificación o regresión sobre ejemplos individuales.
+    \item \textbf{\textit{Pairwise}:} comparan fragmentos de dos en dos, aprendiendo a determinar cuál es más relevante en cada comparación.
+    \item \textbf{\textit{Listwise}:} optimizan directamente la ordenación de toda la lista de candidatos de forma conjunta.
+\end{itemize}
+
+El enfoque \textit{pointwise} se elige frente a \textit{pairwise} y \textit{listwise} por tres motivos: asigna una puntuación absoluta a cada fragmento sin depender de las comparaciones entre candidatos, lo que simplifica la integración en el pipeline; su complejidad escala linealmente con el número de candidatos, siendo más eficiente que \textit{listwise} para listas de tamaño moderado; y dispone de modelos preentrenados de alta calidad ejecutables localmente sin necesidad de entrenamiento adicional.
+
+Dentro del enfoque \textit{pointwise}, existen tres familias principales de arquitecturas para esta tarea, con distintos compromisos entre precisión y coste computacional:
+
+\begin{itemize}
+    \item \textbf{Bi-encoder:} codifica la consulta y el fragmento de forma independiente en vectores de embeddings y calcula su similitud coseno. Es la arquitectura utilizada en la primera etapa de recuperación, donde la eficiencia es crítica para escalar a miles de fragmentos. Sin embargo, al no modelar las interacciones directas entre los tokens de la consulta y el fragmento, su capacidad discriminativa es inferior para listas cortas de candidatos.
+    \item \textbf{Cross-encoder:} recibe el par (consulta, fragmento) concatenado como una única secuencia y aplica atención conjunta sobre ambos textos, produciendo una puntuación escalar de relevancia. Captura interacciones finas a nivel de token que el bi-encoder no puede modelar, lo que lo hace más preciso para reordenar listas reducidas. Su coste es mayor (requiere una inferencia por par), pero esto es asumible cuando la lista de candidatos ya está acotada a decenas de fragmentos.
+    \item \textbf{Late interaction (ColBERT):} codifica consulta y fragmento de forma independiente, pero conserva las representaciones por token para calcular la relevancia mediante operaciones de similitud máxima (\textit{MaxSim}) en tiempo de recuperación. Ofrece un punto intermedio entre bi-encoder y cross-encoder, pero introduce mayor complejidad de implementación y almacenamiento que no está justificada para el tamaño de candidatos de este prototipo.
+\end{itemize}
+
+Se selecciona el \textit{cross-encoder} porque, una vez que la primera etapa de recuperación reduce el espacio de búsqueda a un conjunto pequeño de candidatos, la latencia adicional es despreciable frente a la ganancia en precisión al discriminar fragmentos semánticamente próximos pero con distinta relevancia real.
+
+\subsection{Modelo de reranking seleccionado}\label{subsec:modelo-reranking}
+
+El modelo seleccionado es \textit{BAAI/bge-reranker-v2-m3} \cite{chen2024bgem3}, publicado por el Beijing Academy of Artificial Intelligence (BAAI), diseñado específicamente para tareas de reranking multilingüe e integrado mediante \texttt{SentenceTransformers} \cite{sentenceTransformersCrossEncoder}.
+Se trata de un modelo transformer de tipo encoder, entrenado mediante aprendizaje contrastivo sobre pares de consultas y pasajes relevantes e irrelevantes en múltiples idiomas.
+El modelo puede ejecutarse localmente y ofrece soporte para las lenguas del corpus, lo que lo hace adecuado para este trabajo.
+
+La Figura~\ref{fig:pipeline-hibrido} ilustra el flujo completo de recuperación híbrida con reranking, mostrando cómo la consulta se procesa en paralelo por ambas ramas antes de fusionarse y reordenarse.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw=gray!60!black, fill=white, rounded corners=3pt,
+              minimum width=3.4cm, minimum height=0.65cm,
+              align=center, font=\small},
+  dense/.style={box, draw=blue!70!black, fill=blue!8},
+  lexic/.style={box, draw=orange!70!black, fill=orange!8},
+  fuse/.style={box, draw=violet!70!black, fill=violet!8, minimum width=5.0cm},
+  rerank/.style={box, draw=red!65!black, fill=red!8, minimum width=5.0cm},
+  topk/.style={box, draw=green!60!black, fill=green!9, minimum width=5.0cm},
+  arr/.style={-{Stealth[length=5pt,width=4pt]}, thick},
+]
+
+\node[box, minimum width=5.0cm] (query) at (0,0)   {Consulta del usuario};
+
+\node[dense] (emb)  at (-2.9,-1.6)  {BGE-M3\\embeddings};
+\node[lexic] (tok)  at ( 2.9,-1.6)  {Tokenización BM25};
+
+\node[dense] (vs)   at (-2.9,-3.1)  {Búsqueda vectorial\\similitud coseno};
+\node[lexic] (ls)   at ( 2.9,-3.1)  {Búsqueda léxica\\coincidencia de términos};
+    
+\node[dense] (r1)   at (-2.9,-4.6)  {Ranking denso\\($N$ candidatos)};
+\node[lexic] (r2)   at ( 2.9,-4.6)  {Ranking léxico\\($N$ candidatos)};
+
+\node[fuse]  (rrf)  at (0,-6.1)     {Fusión RRF\\(\textit{Reciprocal Rank Fusion})};
+\node[rerank](rk)   at (0,-7.6)     {BGE Reranker \textit{(cross-encoder)}\\reordenación de candidatos};
+\node[topk]  (topknode) at (0,-9.1) {Top-$k$ fragmentos};
+
+\draw[arr, gray!70!black]   (query) -- (emb);
+\draw[arr, gray!70!black]   (query) -- (tok);
+\draw[arr, blue!70!black]   (emb)   -- (vs);
+\draw[arr, orange!70!black] (tok)   -- (ls);
+\draw[arr, blue!70!black]   (vs)    -- (r1);
+\draw[arr, orange!70!black] (ls)    -- (r2);
+\draw[arr, violet!70!black] (r1)    -- (rrf);
+\draw[arr, violet!70!black] (r2)    -- (rrf);
+\draw[arr, red!65!black]    (rrf)   -- (rk);
+\draw[arr, green!60!black]  (rk)    -- (topknode);
+
+\end{tikzpicture}
+\caption{Pipeline de recuperación híbrida: BGE-M3 y BM25 se fusionan mediante RRF antes de ser reordenadas por el reranker.}
+\label{fig:pipeline-hibrido}
+\end{figure}
 
 \section{Modelo de lenguaje}\label{sec:modelo-lenguaje}
 
@@ -317,7 +380,7 @@ Durante el desarrollo del prototipo se prioriza el uso de proveedores compatible
 En particular, herramientas como Ollama permiten ejecutar modelos localmente y ofrecen compatibilidad con interfaces similares a la API de OpenAI, lo que simplifica la integración con aplicaciones ya preparadas para este tipo de proveedores \cite{ollamaOpenAICompatibility}.
 De forma complementaria, vLLM se emplea como servidor de inferencia local compatible con la misma interfaz, lo que permite aprovechar aceleración por GPU cuando está disponible \cite{kwon2023efficient}.
 
-El modelo utilizado por defecto en el prototipo para la generación de respuestas es \textit{Qwen2.5-0.5B-Instruct}, un modelo instruccionado de la familia Qwen~2.5, seleccionado por su reducido tamaño (500 millones de parámetros), su capacidad para seguir instrucciones en español e inglés y su compatibilidad con entornos de cómputo limitados \cite{qwen2025}.
+El modelo utilizado en los experimentos de este trabajo es \texttt{qwen2.5:7b} \cite{qwen2025}, ejecutado localmente mediante Ollama, un modelo instruccionado de la familia Qwen~2.5 con 7.000 millones de parámetros, seleccionado por su capacidad para seguir instrucciones en español e inglés y su viabilidad en entornos de cómputo limitados (GPU T4).
 La arquitectura desacoplada del pipeline permite sustituir este modelo por alternativas de mayor capacidad —como Llama, Mistral o modelos propietarios accesibles mediante API— sin modificar el resto de componentes.
 
 Respecto al orquestador, este sigue el paradigma ReAct \cite{yao2023react} (\textit{Reasoning + Acting}), en el que el modelo de lenguaje actúa como motor de decisión en un bucle iterativo.
@@ -326,42 +389,12 @@ El sistema ejecuta la herramienta indicada —búsqueda en el corpus, redacción
 Este ciclo \textit{Pensamiento $\to$ Acción $\to$ Observación} se repite hasta que el LLM invoca la acción \textit{responder}, indicando que dispone de evidencia suficiente, o la acción \textit{rechazar}, cuando no encuentra información relevante en el corpus.
 La generación de la respuesta final se delega siempre al prompt RAG estándar, de modo que el orquestador decide \emph{qué} recuperar y \emph{cuándo} responder, mientras que el componente generativo base se encarga de la redacción.
 
-Esta arquitectura permite mantener flexibilidad experimental: los modelos locales favorecen el control del entorno y la reducción de costes, mientras que las APIs externas pueden emplearse en fases concretas si se requiere una mayor calidad de generación.
-Así, el sistema no queda ligado a un único modelo ni a una única tecnología de inferencia.
-
-\section{Mejora de la recuperación mediante reranking}\label{sec:reranking}
-
-El reranking se introduce como una segunda etapa de recuperación.
-Tras obtener un conjunto inicial de fragmentos candidatos mediante recuperación semántica o híbrida, un modelo adicional vuelve a ordenar dichos fragmentos en función de su relevancia respecto a la consulta.
-Esta etapa permite corregir el orden inicial cuando los métodos de primera etapa no han situado los fragmentos más relevantes en las posiciones superiores del ranking.
-
-Los modelos de reranking pueden clasificarse en tres categorías según su estrategia de puntuación \cite{liu2009learning}.
-Los modelos \textit{pointwise} asignan una puntuación independiente a cada par formado por la consulta y un fragmento candidato, tratando el problema como una tarea de clasificación o regresión sobre ejemplos individuales.
-Los modelos \textit{pairwise} comparan fragmentos de dos en dos, aprendiendo a determinar cuál es más relevante en cada comparación.
-Los modelos \textit{listwise} optimizan directamente la ordenación de toda la lista de candidatos de forma conjunta.
-
-En este proyecto se opta por un enfoque \textit{pointwise} (configuración \textit{cross-encoder}) por varias razones.
-En primer lugar, este enfoque asigna una puntuación de relevancia absoluta a cada fragmento de forma independiente, lo que simplifica la integración en el pipeline y permite ajustar umbrales de corte de forma controlada.
-En segundo lugar, su complejidad escala linealmente con el número de fragmentos candidatos, lo que lo hace más eficiente que los enfoques \textit{listwise} para un tamaño de lista moderado.
-Por último, existen modelos preentrenados de alta calidad para esta configuración que pueden ejecutarse localmente sin entrenamiento adicional.
-
-\subsection{Modelo de reranking seleccionado}\label{subsec:modelo-reranking}
-
-Para esta tarea se emplea un modelo de tipo \texttt{CrossEncoder} integrado mediante \texttt{SentenceTransformers}.
-A diferencia de los modelos bi-encoder utilizados para generar embeddings de forma independiente, un \texttt{CrossEncoder} evalúa conjuntamente el par formado por la consulta y cada fragmento candidato, lo que permite obtener una estimación más precisa de su relevancia \cite{sentenceTransformersCrossEncoder}.
-
-El modelo seleccionado es \textit{BAAI/bge-reranker-v2-m3}, publicado por el Beijing Academy of Artificial Intelligence (BAAI) y diseñado específicamente para tareas de reranking multilingüe \cite{chen2024bgem3}.
-Se trata de un modelo transformer de tipo encoder, entrenado mediante aprendizaje contrastivo sobre pares de consultas y pasajes relevantes e irrelevantes en múltiples idiomas.
-A diferencia del modelo de embeddings BGE-M3, que genera representaciones vectoriales independientes para cada texto, el reranker recibe siempre como entrada el par completo (consulta, fragmento) y produce una puntuación escalar que indica el grado de relevancia del fragmento respecto a la consulta.
-Esta configuración cross-encoder captura interacciones a nivel de token entre ambas entradas, lo que resulta especialmente útil para discriminar entre fragmentos semánticamente cercanos pero con distinto grado de relevancia real.
-El modelo puede ejecutarse localmente y ofrece soporte para las lenguas del corpus, lo que lo hace adecuado para el prototipo descrito en este trabajo.
-
 \section{Interfaz de usuario y observabilidad}\label{sec:ui-observabilidad}
 
 La interfaz de usuario y la observabilidad son componentes de apoyo dentro del prototipo. 
 Aunque no constituyen el núcleo del sistema RAG, resultan necesarias para facilitar la interacción con el asistente y analizar el comportamiento del pipeline durante las pruebas.
 
-\subsection{Interfaz conversacional con Streamlit}\label{subsec:ui}
+\subsection{Streamlit}\label{subsec:ui}
 
 Para la interfaz conversacional se ha seleccionado Streamlit \cite{streamlitDocs}, un framework de código abierto orientado a la creación de aplicaciones interactivas en Python. 
 Su principal ventaja en este proyecto es que permite construir una interfaz funcional sin introducir una capa de desarrollo frontend compleja.
@@ -369,17 +402,37 @@ Su principal ventaja en este proyecto es que permite construir una interfaz func
 Esta elección resulta adecuada porque el objetivo principal del trabajo no es el diseño de una interfaz avanzada, sino la implementación y evaluación de una arquitectura RAG con recuperación, reranking y orquestación. 
 Por ello, Streamlit permite disponer de un entorno de prueba accesible para interactuar con el sistema, visualizar respuestas y comprobar el funcionamiento del pipeline de forma rápida.
 
-Además, la interfaz se mantiene desacoplada del núcleo del sistema. 
+Además, la interfaz se mantiene desacoplada del núcleo del sistema.
 Esta separación permite modificar o sustituir la capa visual en el futuro sin afectar a los componentes principales de ingesta, recuperación, generación u orquestación.
+La Figura~\ref{fig:streamlit-ui} muestra el aspecto de la interfaz resultante.
 
-\subsection{Trazabilidad y monitorización con Phoenix}\label{subsec:phoenix}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{./contenido/imagenes/streamlit1.png}
+\caption{Interfaz conversacional del asistente implementada con Streamlit.}
+\label{fig:streamlit-ui}
+\end{figure}
 
-Para la observabilidad del sistema se utiliza Phoenix \cite{phoenixDocs}, una plataforma de código abierto orientada al análisis, depuración y evaluación de aplicaciones basadas en modelos de lenguaje. 
-En el contexto de este proyecto, Phoenix permite inspeccionar las ejecuciones del pipeline y revisar elementos como las llamadas al modelo, los fragmentos recuperados, el uso de herramientas y los tiempos asociados a cada etapa.
+\subsection{Phoenix}\label{subsec:phoenix}
 
-La integración se apoya en OpenTelemetry \cite{opentelemetryDocs}, un framework abierto y neutral respecto al proveedor para generar, recopilar y exportar datos de telemetría, como trazas, métricas y registros. 
-Esto permite instrumentar el prototipo sin acoplarlo a una solución cerrada de monitorización.
+Para la observabilidad del sistema se utiliza Phoenix \cite{phoenixDocs}, una plataforma de código abierto de Arize AI orientada al análisis, depuración y evaluación de aplicaciones basadas en modelos de lenguaje.
+Phoenix proporciona una interfaz web que permite visualizar en tiempo real el comportamiento interno del pipeline: desde la consulta original hasta la respuesta final, pasando por cada etapa intermedia.
 
-La observabilidad resulta especialmente relevante en un sistema RAG, ya que permite analizar por qué se ha generado una respuesta concreta, qué documentos han sido recuperados y en qué punto del pipeline pueden aparecer errores o degradaciones de calidad. 
-De este modo, Phoenix no solo actúa como herramienta de depuración, sino también como apoyo para la evaluación experimental del sistema.
+La integración se implementa mediante OpenTelemetry \cite{opentelemetryDocs}, un framework abierto y estándar de la industria para la generación, recopilación y exportación de datos de telemetría (trazas, métricas y registros).
+Un \texttt{TracerProvider} configurado con un \texttt{OTLPSpanExporter} exporta las trazas al servidor Phoenix desplegado en Docker mediante el protocolo gRPC.
+Esta arquitectura desacopla, si en el futuro se sustituyera Phoenix por otra plataforma compatible con OpenTelemetry (como Jaeger o Grafana Tempo), no sería necesario modificar el código de la aplicación.
 
+Cada consulta genera una traza que recorre el pipeline de principio a fin.
+A nivel global se registran la pregunta del usuario, la configuración activa (modo de recuperación, uso de reranking, valor de $k$) y la latencia total.
+Dentro de esa traza, cada etapa registra su propia información:
+
+\begin{itemize}
+    \item \textbf{Recuperación}: qué documentos devolvió el sistema, en qué orden y con qué puntuación de similitud, junto con un extracto de cada fragmento.
+    \item \textbf{Reranking} (variantes C y D): las nuevas puntuaciones asignadas por el \textit{cross-encoder} tras reordenar los candidatos, lo que permite comprobar si el reranker mejora la ordenación.
+    \item \textbf{Generación}: el prompt completo que recibió el modelo, la respuesta que produjo y el número de tokens consumidos.
+    \item \textbf{Reescritura de consulta} (cuando está activa): la pregunta original y la versión reformulada usada para la recuperación.
+\end{itemize}
+
+Durante el desarrollo, Phoenix permitió detectar fallos de recuperación y prompts mal formados de forma inmediata, así como controlar el consumo de tokens por consulta, sin necesidad de depuración manual.
+Durante la evaluación experimental, facilitó verificar que las diferencias de rendimiento entre variantes se debían a los componentes evaluados y no a artefactos de configuración.
+En producción, la misma capa aportaría valor adicional para monitorizar latencias y mantener trazabilidad auditable sobre las respuestas generadas.

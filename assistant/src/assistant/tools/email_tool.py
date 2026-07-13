@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 from dataclasses import dataclass, field
@@ -51,7 +52,15 @@ class EmailTool:
     ) -> EmailDraft:
         """Build a local EmailDraft. Never sends automatically — confirmation required."""
         subject, body = self._build_subject_and_body(user_request, supporting_context)
-        resolved_to = to or self._default_to or None
+        # Extract recipient from structured context if available
+        extracted_to: str | None = None
+        try:
+            data = json.loads(supporting_context)
+            if isinstance(data, dict):
+                extracted_to = data.get("destinatario") or None
+        except (json.JSONDecodeError, TypeError):
+            pass
+        resolved_to = to or extracted_to or self._default_to or None
         return EmailDraft(
             to=resolved_to,
             subject=subject,
@@ -98,13 +107,26 @@ class EmailTool:
     def _build_subject_and_body(
         self, user_request: str, supporting_context: str
     ) -> tuple[str, str]:
+        # If the orchestrator produced structured JSON, use its fields directly
+        try:
+            data = json.loads(supporting_context)
+            if isinstance(data, dict) and "cuerpo" in data:
+                subject = data.get("asunto", "Consulta")
+                body = data["cuerpo"]
+                return subject, body
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+        # If supporting_context already looks like a drafted email, use it directly
+        cleaned = supporting_context.strip().strip('"').strip("'").strip()
+        if cleaned:
+            subject = "Consulta"
+            return subject, cleaned
+
         subject = "Solicitud de informacion"
         body = (
             "Buenos dias,\n\n"
-            "Me gustaria solicitar informacion sobre la siguiente consulta:\n\n"
             f"{user_request}\n\n"
-            "Informacion relevante recopilada:\n"
-            f"{supporting_context}\n\n"
             "Muchas gracias.\n"
         )
         return subject, body

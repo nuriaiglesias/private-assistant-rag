@@ -21,7 +21,7 @@ De este modo, el trabajo no solo responde a una necesidad práctica de desarroll
 
 Se propone el desarrollo de un asistente conversacional institucional privado que permita consultar documentación interna, ofrecer respuestas fundamentadas y apoyar acciones útiles para el usuario dentro de un entorno controlado.
 
-La contribución principal de este Trabajo de Fin de Máster no se limita al desarrollo de un chatbot convencional, sino que se centra en el diseño, implementación y evaluación de una arquitectura modular, trazable y supervisada para un asistente institucional. La propuesta combina de forma integrada cuatro capacidades complementarias: la recuperación documental sobre un corpus institucional, la mejora del ranking de evidencias mediante recuperación híbrida y reranking, la orquestación del flujo de interacción y la generación controlada de borradores de correo electrónico.
+La contribución principal de este Trabajo de Fin de Máster no se limita al desarrollo de un chatbot convencional, sino que se centra en el diseño, implementación y evaluación de una arquitectura modular, trazable y supervisada para un asistente institucional. La propuesta combina de forma integrada cuatro capacidades complementarias: la recuperación documental sobre un corpus institucional, la mejora del ranking de evidencias mediante recuperación híbrida y reranking, la orquestación del flujo de interacción y la generación y envío supervisado de correos electrónicos.
 
 Esta arquitectura responde a requisitos especialmente relevantes en entornos institucionales, como el control del flujo, la privacidad de la información, la trazabilidad de las respuestas y la supervisión humana de las acciones propuestas. De este modo, el asistente no se concibe únicamente como una interfaz conversacional para responder preguntas, sino como un sistema capaz de transformar una consulta documental en una respuesta fundamentada y, cuando procede, en una acción operativa supervisada. La aportación del trabajo reside, por tanto, en articular dentro de una misma solución conocimiento documental, mejora de la recuperación, decisión sobre el flujo de ejecución y apoyo accionable al usuario.
 
@@ -29,7 +29,7 @@ Para evaluar el rendimiento de la propuesta, se definirá un conjunto de datos d
 Estas consultas cubrirán distintos escenarios de uso, incluyendo preguntas informativas, consultas sobre procedimientos y peticiones orientadas a la generación de una acción posterior, como la redacción de un correo formal. 
 Sobre este conjunto se comparará el comportamiento de un \textit{baseline} basado en búsqueda semántica con una variante mejorada basada en búsqueda híbrida y \textit{reranking}, considerando tanto métricas de recuperación como la fundamentación de las respuestas generadas y la utilidad de las salidas producidas.
 
-El asistente no se limita a responder preguntas, sino que puede facilitar tareas útiles para el usuario, como la generación o el envío supervisado de correos electrónicos. 
+El asistente no se limita a responder preguntas, sino que puede facilitar tareas útiles para el usuario, como la generación y envío supervisado de correos electrónicos: el sistema propone el borrador, el usuario lo revisa y confirma, y solo entonces se realiza el envío. 
 Por último, el trabajo incluye una vertiente experimental centrada en la mejora del componente de recuperación de información, mediante la comparación entre un \textit{baseline} inicial y una estrategia mejorada basada en recuperación híbrida y \textit{reranking}.
 
 La Figura~\ref{fig:arquitectura-general} muestra la arquitectura general del asistente propuesto. 
@@ -39,8 +39,8 @@ Por otra parte, se define una fase online de ejecución, en la que el usuario in
 
 En esta fase online, el agente orquestador actúa como componente central de coordinación. 
 Su función es interpretar la consulta del usuario, decidir qué capacidades deben activarse y coordinar el uso de las herramientas disponibles. 
-Entre estas herramientas se incluye el componente de recuperación documental, encargado de consultar la base documental formada por Qdrant y BM25, así como una herramienta accionable orientada a la generación de borradores de correo. 
-Finalmente, el modelo de lenguaje utiliza la información recuperada y el flujo decidido por el orquestador para generar la respuesta final o el borrador correspondiente.
+Entre estas herramientas se incluye el componente de recuperación documental, encargado de consultar la base documental formada por Qdrant y BM25, así como una herramienta de correo electrónico con envío supervisado por el usuario. 
+Finalmente, el modelo de lenguaje utiliza la información recuperada y el flujo decidido por el orquestador para generar la respuesta final o activar la herramienta de correo electrónico correspondiente.
 
 Además, la arquitectura incorpora una capa de observabilidad basada en Phoenix y OpenTelemetry. 
 Esta capa permite registrar trazas del comportamiento del sistema, revisar los documentos recuperados, analizar las llamadas al modelo y facilitar la depuración del pipeline durante las fases de desarrollo y evaluación.
