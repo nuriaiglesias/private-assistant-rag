@@ -54,7 +54,7 @@ El conjunto de herramientas disponibles delimita el ámbito de actuación del as
 \begin{enumerate}
     \item \texttt{buscar}: recupera fragmentos relevantes del corpus para una consulta concreta; puede invocarse varias veces con distintas reformulaciones.
     \item \texttt{rechazar}: señala que no existe evidencia suficiente para responder con rigor.
-    \item \texttt{redactar\_correo}: genera un borrador de correo formal usando el contexto recuperado.
+    \item \texttt{redactar\_correo}: genera el borrador de correo formal y, tras confirmación explícita del usuario, gestiona el envío mediante la API de Microsoft Graph.
     \item \texttt{responder}: indica que el LLM considera que ya dispone de evidencia suficiente y delega la generación de la respuesta final al componente RAG base.
 \end{enumerate}
 Cualquier acción fuera de este conjunto es rechazada, convirtiendo al orquestador en una primera capa de \textit{guardrails} del sistema.
